@@ -1,4 +1,4 @@
-import { supabase } from "./deps.ts";
+import { supabase } from "../deps.ts";
 
 export const getEnv = (key: string, defaultValue?: string): string => {
   const value = Deno.env.get(key);
@@ -31,4 +31,21 @@ export const unpack = async (path: string, target: string) => {
   if (!status.success) {
     throw new Error(`Failed to unpack ${path}`);
   }
+};
+
+const supportedChains = ["avalanche"];
+
+export const collectRpcUrls = () => {
+  const rpcUrls: Record<string, string> = {};
+  for (const chain of supportedChains) {
+    const rpcUrl = getEnv(`${chain.toUpperCase()}_RPC_URL`);
+    if (rpcUrl) {
+      rpcUrls[chain] = rpcUrl;
+    } else {
+      throw new Error(
+        `Missing environment variable: ${chain.toUpperCase()}_RPC_URL`,
+      );
+    }
+  }
+  return rpcUrls;
 };

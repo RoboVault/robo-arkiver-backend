@@ -1,24 +1,32 @@
-import { SupabaseProvider } from "./providers/supabase.ts";
-import { ArkiveProvider } from "./providers/interfaces.ts";
-import { arkiver, arkiverTypes } from "./deps.ts";
-import { rm } from "./utils.ts";
-import { ArkiveMessageEvent } from "../manager/types.ts";
+import { SupabaseProvider } from "../providers/supabase.ts";
+import { ArkiveProvider, DataProvider } from "../providers/interfaces.ts";
+import { arkiver, arkiverTypes } from "../../deps.ts";
+import { collectRpcUrls, getEnv, rm } from "../utils.ts";
+import { ArkiveMessageEvent, NewArkiveMessageEvent } from "./types.ts";
+import { MongoDataProvider } from "../providers/mongodb.ts";
+import { GraphQLServer } from "./graphql-server.ts";
 
 export class ArkiveManager {
   private arkiveProvider: ArkiveProvider;
+  private dataProvider: DataProvider;
+  private graphQLServer: GraphQLServer;
   private arkives: { arkive: arkiverTypes.Arkive; worker: Worker }[] = [];
+  private rpcUrls: Record<string, string>;
 
   constructor() {
     this.removeAllArkives = this.removeAllArkives.bind(this);
     this.addNewArkive = this.addNewArkive.bind(this);
 
     this.arkiveProvider = new SupabaseProvider();
+    this.dataProvider = new MongoDataProvider();
+    this.graphQLServer = new GraphQLServer(); // TODO implement GraphQL server
+    this.rpcUrls = collectRpcUrls();
   }
 
   public async init() {
     try {
       //  a1. Get all arkives from supabase
-      const arkives = await this.getArkives();
+      const arkives = await this.arkiveProvider.getArkives();
       //  b1. Subscribe to new inserts and deletes in arkive table
       this.listenNewArkives();
       this.listenForDeletedArkives();
@@ -34,26 +42,22 @@ export class ArkiveManager {
     }
   }
 
-  private async getArkives() {
-    arkiver.logger.info("fetching existing arkives");
-    return await this.arkiveProvider.getArkives();
-  }
-
   private listenNewArkives() {
     this.arkiveProvider.listenNewArkive(async (arkive: arkiverTypes.Arkive) => {
       arkiver.logger.info("new arkive", arkive);
       // only remove previous versions if on the same major version.
-      // new major versions will be removed once the new version is synced
+      // old major versions will be removed once the new version is synced
       const previousArkives = this.getPreviousVersions(arkive);
       const sameMajor = previousArkives.filter(
         (a) =>
           a.arkive.deployment.major_version === arkive.deployment.major_version,
       );
+      // filter out old major versions
       this.arkives = this.arkives.filter(
         (a) =>
           a.arkive.deployment.major_version !== arkive.deployment.major_version,
       );
-
+      // remove old minor versions
       await Promise.all(sameMajor.map(async (arkive) => {
         await this.removeArkive(arkive);
       }));
@@ -74,10 +78,10 @@ export class ArkiveManager {
 
   private async addNewArkive(arkive: arkiverTypes.Arkive) {
     arkiver.logger.info("adding new arkive", arkive);
-    await this.pullPackage(arkive);
-    const worker = await this.spawnArkiverWorker(arkive);
+    await this.arkiveProvider.pullArkive(arkive);
+    const worker = this.spawnArkiverWorker(arkive);
     await this.updateDeploymentStatus(arkive, "syncing");
-    this.arkives = [...this.arkives, { arkive, worker }];
+    this.arkives.push({ arkive, worker });
     arkiver.logger.info("added new arkive", arkive);
   }
 
@@ -107,36 +111,20 @@ export class ArkiveManager {
     arkive.worker.terminate();
   }
 
-  private removeIndexedData(arkive: arkiverTypes.Arkive) {
-    //TODO: remove indexed data from mongodb
-  }
-
-  private async spawnArkiverWorker(arkive: arkiverTypes.Arkive) {
-    const manifestPath =
-      `../packages/${arkive.user_id}/${arkive.id}/${arkive.deployment.major_version}_${arkive.deployment.minor_version}/manifest.ts`;
-    const { manifest } = await import(manifestPath);
-
+  private spawnArkiverWorker(arkive: arkiverTypes.Arkive) {
     const worker = new Worker(
-      new URL("../arkiver/worker.ts", import.meta.url),
+      new URL("./worker.ts", import.meta.url),
       {
         type: "module",
         deno: {
           permissions: {
-            env: [
-              "INFLUXDB_URL",
-              "INFLUXDB_TOKEN",
-              "INFLUXDB_ORG",
-              "INFLUXDB_BUCKET",
-              "DENO_ENV",
-              "NODE_ENV",
-              "AVALANCHE_RPC_URL",
-            ],
+            env: true,
             hrtime: false,
             net: true,
             ffi: false,
             read: true,
             run: false,
-            sys: false,
+            sys: ["osRelease"],
             write: false,
           },
         },
@@ -162,7 +150,7 @@ export class ArkiveManager {
                 previousVersion.arkive,
               );
               await this.removeArkive(previousVersion);
-              this.removeIndexedData(previousVersion.arkive);
+              this.dataProvider.deleteArkiveData(previousVersion.arkive);
               arkiver.logger.info(
                 "removed old major version",
                 previousVersion.arkive,
@@ -189,14 +177,11 @@ export class ArkiveManager {
       topic: "initArkive",
       data: {
         arkive,
-        manifest,
+        mongoConnection: getEnv("MONGO_CONNECTION"),
+        rpcUrls: this.rpcUrls,
       },
-    });
+    } as NewArkiveMessageEvent);
     return worker;
-  }
-
-  private async pullPackage(arkive: arkiverTypes.Arkive) {
-    await this.arkiveProvider.pullArkive(arkive);
   }
 
   private getPreviousVersions(arkive: arkiverTypes.Arkive) {

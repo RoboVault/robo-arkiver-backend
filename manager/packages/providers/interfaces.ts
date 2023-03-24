@@ -1,4 +1,4 @@
-import { arkiverTypes } from "../deps.ts";
+import { arkiverTypes } from "../../deps.ts";
 
 export interface IndexedBlockHeightParams {
   chain: string;
@@ -20,4 +20,8 @@ export interface ArkiveProvider {
     status: string,
   ): Promise<void>;
   close(): void;
+}
+
+export interface DataProvider {
+  deleteArkiveData(arkive: arkiverTypes.Arkive): Promise<void>;
 }

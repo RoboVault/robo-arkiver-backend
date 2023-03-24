@@ -1,4 +1,4 @@
-import { arkiverTypes } from "./deps.ts";
+import { arkiverTypes } from "../../deps.ts";
 
 export type ArkiveMessageEvent =
   | NewArkiveMessageEvent
@@ -9,7 +9,8 @@ export interface NewArkiveMessageEvent {
   topic: "initArkive";
   data: {
     arkive: arkiverTypes.Arkive;
-    manifest: arkiverTypes.ArkiveManifest;
+    mongoConnection: string;
+    rpcUrls: Record<string, string>;
   };
 }
 
