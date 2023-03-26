@@ -164,6 +164,18 @@ export class SupabaseProvider implements ArkiveProvider {
     }
   }
 
+  public async getUsername(userId: string) {
+    const { data, error } = await this.supabase
+      .from(getEnv("SUPABASE_PROFILE_TABLE"))
+      .select("username")
+      .eq("id", userId)
+      .single();
+    if (error) {
+      throw error;
+    }
+    return data.username;
+  }
+
   public close(): void {
     if (this.newArkiveListener) {
       this.newArkiveListener.unsubscribe();

@@ -19,24 +19,21 @@ export class ArkiveManager {
 
     this.arkiveProvider = new SupabaseProvider();
     this.dataProvider = new MongoDataProvider();
-    this.graphQLServer = new GraphQLServer(); // TODO implement GraphQL server
+    this.graphQLServer = new GraphQLServer(this.arkiveProvider); // TODO implement GraphQL server
     this.rpcUrls = collectRpcUrls();
   }
 
   public async init() {
     try {
-      //  a1. Get all arkives from supabase
       const arkives = await this.arkiveProvider.getArkives();
-      //  b1. Subscribe to new inserts and deletes in arkive table
       this.listenNewArkives();
       this.listenForDeletedArkives();
-      //  a2. Aggregate arkives by owner and name and get the latest version
-      // const aggregatedArkives = this.aggregateArkives(arkives);
       await Promise.all(
         arkives.map(async (arkive) => {
           await this.addNewArkive(arkive);
         }),
       );
+      await this.graphQLServer.run();
     } catch (e) {
       arkiver.logger.error(e, { source: "ArkiveManager.init" });
     }
@@ -79,9 +76,10 @@ export class ArkiveManager {
   private async addNewArkive(arkive: arkiverTypes.Arkive) {
     arkiver.logger.info("adding new arkive", arkive);
     await this.arkiveProvider.pullArkive(arkive);
-    const worker = this.spawnArkiverWorker(arkive);
+    // const worker = this.spawnArkiverWorker(arkive);
     await this.updateDeploymentStatus(arkive, "syncing");
-    this.arkives.push({ arkive, worker });
+    // this.arkives.push({ arkive, worker });
+    await this.graphQLServer.addNewArkive(arkive);
     arkiver.logger.info("added new arkive", arkive);
   }
 

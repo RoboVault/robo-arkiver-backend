@@ -19,6 +19,7 @@ export interface ArkiveProvider {
     arkive: arkiverTypes.Arkive,
     status: string,
   ): Promise<void>;
+  getUsername(userId: string): Promise<string>;
   close(): void;
 }
 
