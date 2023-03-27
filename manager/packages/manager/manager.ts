@@ -25,6 +25,7 @@ export class ArkiveManager {
 
   public async init() {
     try {
+      await this.graphQLServer.run();
       const arkives = await this.arkiveProvider.getArkives();
       this.listenNewArkives();
       this.listenForDeletedArkives();
@@ -33,7 +34,6 @@ export class ArkiveManager {
           await this.addNewArkive(arkive);
         }),
       );
-      await this.graphQLServer.run();
     } catch (e) {
       arkiver.logger.error(e, { source: "ArkiveManager.init" });
     }
@@ -76,9 +76,9 @@ export class ArkiveManager {
   private async addNewArkive(arkive: arkiverTypes.Arkive) {
     arkiver.logger.info("adding new arkive", arkive);
     await this.arkiveProvider.pullArkive(arkive);
-    const worker = this.spawnArkiverWorker(arkive);
+    // const worker = this.spawnArkiverWorker(arkive);
     await this.updateDeploymentStatus(arkive, "syncing");
-    this.arkives.push({ arkive, worker });
+    // this.arkives.push({ arkive, worker });
     await this.graphQLServer.addNewArkive(arkive);
     arkiver.logger.info("added new arkive", arkive);
   }

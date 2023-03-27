@@ -58,7 +58,16 @@ export class GraphQLServer {
       );
       return;
     }
-    const schema = buildSchemaFromEntities([...manifest.entities, {
+    const connection = mongoose.connections[0].useDb(
+      `${arkive.id}-${arkive.deployment.major_version}`,
+    );
+    const models = manifest.entities.map((
+      entity: { model: mongoose.Model<unknown>; list: boolean },
+    ) => ({
+      model: connection.model(entity.model.modelName, entity.model.schema),
+      list: entity.list,
+    }));
+    const schema = buildSchemaFromEntities([...models, {
       model: ArkiverMetadata,
       list: false,
     }]);
