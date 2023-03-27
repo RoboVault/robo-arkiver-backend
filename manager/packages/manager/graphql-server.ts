@@ -1,6 +1,6 @@
-import { buildSchemaFromEntities } from "https://deno.land/x/robo_arkiver@v0.1.8/mod.ts";
 import {
   arkiver,
+  arkiverMetadata,
   arkiverTypes,
   grapQLYoga,
   http,
@@ -8,7 +8,6 @@ import {
 } from "../../deps.ts";
 import { ArkiveProvider } from "../providers/interfaces.ts";
 import { getEnv } from "../utils.ts";
-import { ArkiverMetadata } from "https://deno.land/x/robo_arkiver@v0.1.8/src/arkiver/entities.ts";
 
 export class GraphQLServer {
   private pathToYoga: Map<
@@ -67,10 +66,17 @@ export class GraphQLServer {
       model: connection.model(entity.model.modelName, entity.model.schema),
       list: entity.list,
     }));
-    const schema = buildSchemaFromEntities([...models, {
-      model: ArkiverMetadata,
-      list: false,
-    }]);
+    const metadata = {
+      model: connection.model(
+        arkiverMetadata.ArkiverMetadata.modelName,
+        arkiverMetadata.ArkiverMetadata.schema,
+      ),
+      list: true,
+    };
+    const schema = arkiver.buildSchemaFromEntities([
+      ...models,
+      metadata,
+    ]);
 
     const options = {
       schema,

@@ -1,6 +1,7 @@
-export * as arkiver from "https://deno.land/x/robo_arkiver@v0.1.10/mod.ts";
-export * as arkiverTypes from "https://deno.land/x/robo_arkiver@v0.1.10/src/arkiver/types.ts";
-export * as arkiverUtils from "https://deno.land/x/robo_arkiver@v0.1.10/src/utils.ts";
+export * as arkiver from "https://deno.land/x/robo_arkiver@v0.1.13/mod.ts";
+export * as arkiverTypes from "https://deno.land/x/robo_arkiver@v0.1.13/src/arkiver/types.ts";
+export * as arkiverUtils from "https://deno.land/x/robo_arkiver@v0.1.13/src/utils.ts";
+export * as arkiverMetadata from "https://deno.land/x/robo_arkiver@v0.1.13/src/arkiver/arkive-metadata.ts";
 export * as supabase from "https://esm.sh/@supabase/supabase-js@2.5.0";
 export * as mongoose from "npm:mongoose";
 export * as graphQLCompose from "npm:graphql-compose";
