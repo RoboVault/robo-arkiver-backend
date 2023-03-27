@@ -1,10 +1,9 @@
 {
   "version": "2",
   "remote": {
-    "https://deno.land/std@0.173.0/collections/filter_values.ts": "5b9feaf17b9a6e5ffccdd36cf6f38fa4ffa94cff2602d381c2ad0c2a97929652",
-    "https://deno.land/std@0.173.0/collections/without_all.ts": "a89f5da0b5830defed4f59666e188df411d8fece35a5f6ca69be6ca71a95c185",
-    "https://deno.land/std@0.173.0/dotenv/load.ts": "0636983549b98f29ab75c9a22a42d9723f0a389ece5498fe971e7bb2556a12e2",
-    "https://deno.land/std@0.173.0/dotenv/mod.ts": "6e1dbc4737e3f62a5c1f3d2a26a0e5626fb168a198375bef574fedbe86a79f20",
+    "https://deno.land/std@0.150.0/media_types/_util.ts": "ce9b4fc4ba1c447dafab619055e20fd88236ca6bdd7834a21f98bd193c3fbfa1",
+    "https://deno.land/std@0.150.0/media_types/mod.ts": "2d4b6f32a087029272dc59e0a55ae3cc4d1b27b794ccf528e94b1925795b3118",
+    "https://deno.land/std@0.150.0/media_types/vendor/mime-db.v1.52.0.ts": "724cee25fa40f1a52d3937d6b4fbbfdd7791ff55e1b7ac08d9319d5632c7f5af",
     "https://deno.land/std@0.177.0/_util/asserts.ts": "178dfc49a464aee693a7e285567b3d0b555dc805ff490505a8aae34f9cfb1462",
     "https://deno.land/std@0.177.0/bytes/copy.ts": "939d89e302a9761dcf1d9c937c7711174ed74c59eef40a1e4569a05c9de88219",
     "https://deno.land/std@0.177.0/fmt/colors.ts": "938c5d44d889fb82eff6c358bea8baa7e85950a16c9f6dae3ec3a7a729164471",
@@ -25,21 +24,10 @@
     "https://deno.land/std@0.179.0/async/pool.ts": "fd082bd4aaf26445909889435a5c74334c017847842ec035739b4ae637ae8260",
     "https://deno.land/std@0.179.0/async/retry.ts": "5efa3ba450ac0c07a40a82e2df296287b5013755d232049efd7ea2244f15b20f",
     "https://deno.land/std@0.179.0/async/tee.ts": "47e42d35f622650b02234d43803d0383a89eb4387e1b83b5a40106d18ae36757",
-    "https://deno.land/std@0.180.0/async/abortable.ts": "73acfb3ed7261ce0d930dbe89e43db8d34e017b063cf0eaa7d215477bf53442e",
-    "https://deno.land/std@0.180.0/async/deadline.ts": "c5facb0b404eede83e38bd2717ea8ab34faa2ffb20ef87fd261fcba32ba307aa",
-    "https://deno.land/std@0.180.0/async/debounce.ts": "adab11d04ca38d699444ac8a9d9856b4155e8dda2afd07ce78276c01ea5a4332",
-    "https://deno.land/std@0.180.0/async/deferred.ts": "42790112f36a75a57db4a96d33974a936deb7b04d25c6084a9fa8a49f135def8",
-    "https://deno.land/std@0.180.0/async/delay.ts": "73aa04cec034c84fc748c7be49bb15cac3dd43a57174bfdb7a4aec22c248f0dd",
-    "https://deno.land/std@0.180.0/async/mod.ts": "f04344fa21738e5ad6bea37a6bfffd57c617c2d372bb9f9dcfd118a1b622e576",
-    "https://deno.land/std@0.180.0/async/mux_async_iterator.ts": "70c7f2ee4e9466161350473ad61cac0b9f115cff4c552eaa7ef9d50c4cbb4cc9",
-    "https://deno.land/std@0.180.0/async/pool.ts": "fd082bd4aaf26445909889435a5c74334c017847842ec035739b4ae637ae8260",
-    "https://deno.land/std@0.180.0/async/retry.ts": "5efa3ba450ac0c07a40a82e2df296287b5013755d232049efd7ea2244f15b20f",
-    "https://deno.land/std@0.180.0/async/tee.ts": "47e42d35f622650b02234d43803d0383a89eb4387e1b83b5a40106d18ae36757",
     "https://deno.land/std@0.180.0/collections/filter_values.ts": "5b9feaf17b9a6e5ffccdd36cf6f38fa4ffa94cff2602d381c2ad0c2a97929652",
     "https://deno.land/std@0.180.0/collections/without_all.ts": "a89f5da0b5830defed4f59666e188df411d8fece35a5f6ca69be6ca71a95c185",
     "https://deno.land/std@0.180.0/dotenv/load.ts": "0636983549b98f29ab75c9a22a42d9723f0a389ece5498fe971e7bb2556a12e2",
     "https://deno.land/std@0.180.0/dotenv/mod.ts": "8dcbc8a40b896a0bf094582aaeadbfc76d3528872faf2efc0302beb1d2f6afd0",
-    "https://deno.land/std@0.180.0/http/server.ts": "cbb17b594651215ba95c01a395700684e569c165a567e4e04bba327f41197433",
     "https://deno.land/std@0.181.0/_util/asserts.ts": "178dfc49a464aee693a7e285567b3d0b555dc805ff490505a8aae34f9cfb1462",
     "https://deno.land/std@0.181.0/async/abortable.ts": "fd682fa46f3b7b16b4606a5ab52a7ce309434b76f820d3221bdfb862719a15d7",
     "https://deno.land/std@0.181.0/async/deadline.ts": "c5facb0b404eede83e38bd2717ea8ab34faa2ffb20ef87fd261fcba32ba307aa",
@@ -64,36 +52,6 @@
     "https://deno.land/std@0.181.0/http/negotiation.ts": "46e74a6bad4b857333a58dc5b50fe8e5a4d5267e97292293ea65f980bd918086",
     "https://deno.land/std@0.181.0/http/server.ts": "cbb17b594651215ba95c01a395700684e569c165a567e4e04bba327f41197433",
     "https://deno.land/std@0.181.0/http/server_sent_event.ts": "856764c8c058605bb618272833990b1f88b6de0dcc460f0f09749ba7e99dd656",
-    "https://deno.land/x/robo_arkiver@v0.1.6/mod.ts": "4fd2db73f8bd4d21ec9b89a05447d59998a0bb408bfcdb2cc7db923481f69cc0",
-    "https://deno.land/x/robo_arkiver@v0.1.6/src/arkiver/arkiver.ts": "7a1ec399be7cbce963c1305ee9aa13e2ae86189f22ba25b462ca035e6d818dc5",
-    "https://deno.land/x/robo_arkiver@v0.1.6/src/arkiver/data-source.ts": "89c532d49aae13815ab0e93a91a0d72146bfdc0f5a964160e5aaf9f136d95dca",
-    "https://deno.land/x/robo_arkiver@v0.1.6/src/arkiver/entities.ts": "577a37af96fcdb7cb449d0edad7e8c9a82c6f0566b49bf94d9e7deeef22b4a4a",
-    "https://deno.land/x/robo_arkiver@v0.1.6/src/arkiver/manifest-builder.ts": "30a24a2fe27a07cbae03b89b56d4694ddf78918cc0ea6ae2ce7982a13c95c3c9",
-    "https://deno.land/x/robo_arkiver@v0.1.6/src/arkiver/providers/interfaces.ts": "48712e387dcac9370bcd746de56c31fecfe6b0e22518cf3119d2ba82c3a3dfc9",
-    "https://deno.land/x/robo_arkiver@v0.1.6/src/arkiver/providers/mongodb.ts": "c03bdeb8e955fb260bedd512f3189504f4ca075698996d7700e40f4e68ed369f",
-    "https://deno.land/x/robo_arkiver@v0.1.6/src/arkiver/store.ts": "b70d26858d21b278b85b1b2452f59455b8f482b25f1456e3a1c80c901919a1da",
-    "https://deno.land/x/robo_arkiver@v0.1.6/src/arkiver/types.ts": "35a050e8e836e24da09dfe6ce57f368515ad307b8c355b3a5066b22a061016ee",
-    "https://deno.land/x/robo_arkiver@v0.1.6/src/chains.ts": "7174174ff9fac4b5f80a8682d6b56284755a260e2da617fcf5925fec77728017",
-    "https://deno.land/x/robo_arkiver@v0.1.6/src/deps.ts": "d2f793f5c3096fc8f6b9ec7b6a7cd9208f85061e5abaecc8fc0178fb4117b567",
-    "https://deno.land/x/robo_arkiver@v0.1.6/src/graphql/builder.ts": "ff4febf2f7a16681018942c5bb2de48b7a3685692d2dc011ba9a4ce0f029b4ca",
-    "https://deno.land/x/robo_arkiver@v0.1.6/src/graphql/entity.ts": "dd66a7bcbf5303afc1cd5528014ae716852346ed05d018fc2d3f75583b5ee189",
-    "https://deno.land/x/robo_arkiver@v0.1.6/src/logger.ts": "e2595eb57d80b5eed2aa208756dc1af230499b0eb6d5f8431f525cb29789cff7",
-    "https://deno.land/x/robo_arkiver@v0.1.6/src/utils.ts": "fa4749f92df9e4d6c6807c3245ab6c4a4df23ac77a4cccc957a0f16b0884b137",
-    "https://deno.land/x/robo_arkiver@v0.1.7/mod.ts": "4fd2db73f8bd4d21ec9b89a05447d59998a0bb408bfcdb2cc7db923481f69cc0",
-    "https://deno.land/x/robo_arkiver@v0.1.7/src/arkiver/arkiver.ts": "2a4fa53dbcd2848d5bb091f32227de6e40f7f034ccdbe28e465ec4dabc84d6ba",
-    "https://deno.land/x/robo_arkiver@v0.1.7/src/arkiver/data-source.ts": "89c532d49aae13815ab0e93a91a0d72146bfdc0f5a964160e5aaf9f136d95dca",
-    "https://deno.land/x/robo_arkiver@v0.1.7/src/arkiver/entities.ts": "577a37af96fcdb7cb449d0edad7e8c9a82c6f0566b49bf94d9e7deeef22b4a4a",
-    "https://deno.land/x/robo_arkiver@v0.1.7/src/arkiver/manifest-builder.ts": "30a24a2fe27a07cbae03b89b56d4694ddf78918cc0ea6ae2ce7982a13c95c3c9",
-    "https://deno.land/x/robo_arkiver@v0.1.7/src/arkiver/providers/interfaces.ts": "48712e387dcac9370bcd746de56c31fecfe6b0e22518cf3119d2ba82c3a3dfc9",
-    "https://deno.land/x/robo_arkiver@v0.1.7/src/arkiver/providers/mongodb.ts": "c03bdeb8e955fb260bedd512f3189504f4ca075698996d7700e40f4e68ed369f",
-    "https://deno.land/x/robo_arkiver@v0.1.7/src/arkiver/store.ts": "b70d26858d21b278b85b1b2452f59455b8f482b25f1456e3a1c80c901919a1da",
-    "https://deno.land/x/robo_arkiver@v0.1.7/src/arkiver/types.ts": "35a050e8e836e24da09dfe6ce57f368515ad307b8c355b3a5066b22a061016ee",
-    "https://deno.land/x/robo_arkiver@v0.1.7/src/chains.ts": "7174174ff9fac4b5f80a8682d6b56284755a260e2da617fcf5925fec77728017",
-    "https://deno.land/x/robo_arkiver@v0.1.7/src/deps.ts": "d2f793f5c3096fc8f6b9ec7b6a7cd9208f85061e5abaecc8fc0178fb4117b567",
-    "https://deno.land/x/robo_arkiver@v0.1.7/src/graphql/builder.ts": "ff4febf2f7a16681018942c5bb2de48b7a3685692d2dc011ba9a4ce0f029b4ca",
-    "https://deno.land/x/robo_arkiver@v0.1.7/src/graphql/entity.ts": "dd66a7bcbf5303afc1cd5528014ae716852346ed05d018fc2d3f75583b5ee189",
-    "https://deno.land/x/robo_arkiver@v0.1.7/src/logger.ts": "e2595eb57d80b5eed2aa208756dc1af230499b0eb6d5f8431f525cb29789cff7",
-    "https://deno.land/x/robo_arkiver@v0.1.7/src/utils.ts": "fa4749f92df9e4d6c6807c3245ab6c4a4df23ac77a4cccc957a0f16b0884b137",
     "https://deno.land/x/robo_arkiver@v0.1.8/mod.ts": "4fd2db73f8bd4d21ec9b89a05447d59998a0bb408bfcdb2cc7db923481f69cc0",
     "https://deno.land/x/robo_arkiver@v0.1.8/src/arkiver/arkiver.ts": "2a4fa53dbcd2848d5bb091f32227de6e40f7f034ccdbe28e465ec4dabc84d6ba",
     "https://deno.land/x/robo_arkiver@v0.1.8/src/arkiver/data-source.ts": "89c532d49aae13815ab0e93a91a0d72146bfdc0f5a964160e5aaf9f136d95dca",
@@ -109,83 +67,62 @@
     "https://deno.land/x/robo_arkiver@v0.1.8/src/graphql/entity.ts": "dd66a7bcbf5303afc1cd5528014ae716852346ed05d018fc2d3f75583b5ee189",
     "https://deno.land/x/robo_arkiver@v0.1.8/src/logger.ts": "e2595eb57d80b5eed2aa208756dc1af230499b0eb6d5f8431f525cb29789cff7",
     "https://deno.land/x/robo_arkiver@v0.1.8/src/utils.ts": "fa4749f92df9e4d6c6807c3245ab6c4a4df23ac77a4cccc957a0f16b0884b137",
-    "https://esm.sh/@supabase/supabase-js@2.5.0": "dead14e8421ab8dc2b9c27c57571bedb36999805f2353150a3ad359312cade84",
-    "https://esm.sh/v111/@supabase/functions-js@2.1.0/deno/functions-js.js": "aaee1c9a738495ae8619799b21d4bcda5f156985552559d43ef199b4b6108534",
-    "https://esm.sh/v111/@supabase/functions-js@2.1.0/dist/module/FunctionsClient.d.ts": "c2e7bcf24374e6b99863f214eeef71e13d2c271039b48c9052c97f0cb3a16950",
-    "https://esm.sh/v111/@supabase/functions-js@2.1.0/dist/module/index.d.ts": "1832b08edacd73b343430314bdf7af9ce456373fa3c5235b8dcdbbdf4e1d13ae",
-    "https://esm.sh/v111/@supabase/functions-js@2.1.0/dist/module/types.d.ts": "085a4704c1c8969bcb9188fc018792f0c4e0387c465d26512ffc91d083767b76",
-    "https://esm.sh/v111/@supabase/gotrue-js@2.13.0/deno/gotrue-js.js": "96acbe6f739676dbcbba2c9b33651cbdeceef16999210074ae377d9f36e1c70c",
-    "https://esm.sh/v111/@supabase/gotrue-js@2.13.0/dist/module/GoTrueAdminApi.d.ts": "e26cd0616dfb78c1bd5a585ce693477968fa2d19b223b3f868e37c1b7927d16d",
-    "https://esm.sh/v111/@supabase/gotrue-js@2.13.0/dist/module/GoTrueClient.d.ts": "fe98c7e4b3ec746a5dfa35b415cdfa6f429b0b57c2f9929808087dadc10fed5e",
-    "https://esm.sh/v111/@supabase/gotrue-js@2.13.0/dist/module/index.d.ts": "8cdbab5746a3ce56786025593191032aeb560f933279507c260d2bb65e83b636",
-    "https://esm.sh/v111/@supabase/gotrue-js@2.13.0/dist/module/lib/errors.d.ts": "aba89c1be014c919b2ed0cd2379d71d9271f85fc8ecc850b23514710184e2b0d",
-    "https://esm.sh/v111/@supabase/gotrue-js@2.13.0/dist/module/lib/fetch.d.ts": "0124365bdd93bdaefc37112cad6eafefdb01ae36c657770a64df7dbf5f305342",
-    "https://esm.sh/v111/@supabase/gotrue-js@2.13.0/dist/module/lib/helpers.d.ts": "f0c24e68ebcf699a270047fb9ad94f769af0783f090519a045c651df14fd4f88",
-    "https://esm.sh/v111/@supabase/gotrue-js@2.13.0/dist/module/lib/types.d.ts": "159d0b5104c18587c98293bd3206620418e23bc52a16e98b08328fedf359517a",
-    "https://esm.sh/v111/@supabase/postgrest-js@1.4.1/deno/postgrest-js.js": "67c73399515816a940f10576f1224518163b5bf603339661f9357e5f29e5c9b1",
-    "https://esm.sh/v111/@supabase/postgrest-js@1.4.1/dist/module/PostgrestBuilder.d.ts": "8aba1b4384974573cdd01f0fc7d688ef517d76f3f298151692b0b37249f0d1a3",
-    "https://esm.sh/v111/@supabase/postgrest-js@1.4.1/dist/module/PostgrestClient.d.ts": "70bddc51d63d92a5f6817be70f4e0d232c6758b425792adb6a9912844aa18747",
-    "https://esm.sh/v111/@supabase/postgrest-js@1.4.1/dist/module/PostgrestFilterBuilder.d.ts": "a5c93476d23858a561734a206dd583c1b0fe319f3e9856f69e79134608439e62",
-    "https://esm.sh/v111/@supabase/postgrest-js@1.4.1/dist/module/PostgrestQueryBuilder.d.ts": "39afb003a4687be50e4089b839c4f317bf0b6a2c234929a1a51bce99276831e3",
-    "https://esm.sh/v111/@supabase/postgrest-js@1.4.1/dist/module/PostgrestTransformBuilder.d.ts": "eda6937c25925489d93fb1f28b58346358d95aec887fefd5bebe4a74cf8e3948",
-    "https://esm.sh/v111/@supabase/postgrest-js@1.4.1/dist/module/index.d.ts": "fffbd398e6b4db2b1320e819d395493f3169219cfec082e09787ae2bb02baaa3",
-    "https://esm.sh/v111/@supabase/postgrest-js@1.4.1/dist/module/select-query-parser.d.ts": "60afa60217641702095795445e04149a360d7e22f662581253c7a7c86a5fb335",
-    "https://esm.sh/v111/@supabase/postgrest-js@1.4.1/dist/module/types.d.ts": "b62bb9fdf20676f829bcf01b2348c9766b5d14a0451a964496e96ac49fcc2758",
-    "https://esm.sh/v111/@supabase/realtime-js@2.6.0/deno/realtime-js.js": "042c780fdb125f50e32db19874890422da68a6fe50d794f5f41c820e57cdbbae",
-    "https://esm.sh/v111/@supabase/realtime-js@2.6.0/dist/module/RealtimeChannel.d.ts": "ba0120c8ec3f95e237862f3cd47a6a27e26f3b5663b9c5a71531baee105050b3",
-    "https://esm.sh/v111/@supabase/realtime-js@2.6.0/dist/module/RealtimeClient.d.ts": "f3df0873f1151c1b9a729306e7542f79b50fdcc558798731795562e53ea6d608",
-    "https://esm.sh/v111/@supabase/realtime-js@2.6.0/dist/module/RealtimePresence.d.ts": "ba7bac5888f4b354080b7f3e738af38bc7eeebdccc5c663066e71d254530807b",
-    "https://esm.sh/v111/@supabase/realtime-js@2.6.0/dist/module/index.d.ts": "eeff0dbcd61707a889eb2370cf3617ef42ddc2f71d7d4d18e1e43542893c066d",
-    "https://esm.sh/v111/@supabase/realtime-js@2.6.0/dist/module/lib/constants.d.ts": "b8392f2eb7cf41c3479c142875adbbe4b48bfafdced532165abc1cc68aa20cb5",
-    "https://esm.sh/v111/@supabase/realtime-js@2.6.0/dist/module/lib/push.d.ts": "65459f6c4c166a7264b5a7a761414c9bf4e0d2dbf0803e1e53e2ecefdbaa1e1d",
-    "https://esm.sh/v111/@supabase/realtime-js@2.6.0/dist/module/lib/serializer.d.ts": "4990f875f6e9a1898655fdba7b822222f8b930bfb7c9253b4f047aa4b05d4ca1",
-    "https://esm.sh/v111/@supabase/realtime-js@2.6.0/dist/module/lib/timer.d.ts": "ddf170afd193dc372316ed1f4a087f0e9732a5b8bd9cb9e5c3ac74f1cc676e31",
-    "https://esm.sh/v111/@supabase/storage-js@2.3.1/deno/storage-js.js": "aa3038e0242cf24cdcd483e38ae4420656a146032630fd598c8c11bb0dc9fe7c",
-    "https://esm.sh/v111/@supabase/storage-js@2.3.1/dist/module/StorageClient.d.ts": "716bdde7f3ea8f49606ac540ceb4b410facb9526668711ffb5676f7935f3408d",
-    "https://esm.sh/v111/@supabase/storage-js@2.3.1/dist/module/index.d.ts": "07800a0eea5587ec26d8932a4f5f10871b9e017292ab05b74b27154fb5f98860",
-    "https://esm.sh/v111/@supabase/storage-js@2.3.1/dist/module/lib/errors.d.ts": "753c82a97a0e1b05fec3989af93e4fbf2f4a3da3957584613768593ef5cc8bfc",
-    "https://esm.sh/v111/@supabase/storage-js@2.3.1/dist/module/lib/fetch.d.ts": "18b68d37f6564cc754ade6371fc7e655a775e91b10abf0f45d0c037b93436761",
-    "https://esm.sh/v111/@supabase/storage-js@2.3.1/dist/module/lib/types.d.ts": "4cc02672a0b2d54325185cb1afb1a403f5cec265267ba6f37fd82b3201811142",
-    "https://esm.sh/v111/@supabase/storage-js@2.3.1/dist/module/packages/StorageBucketApi.d.ts": "fcdbe1b00e3430099530a00a3cfb446e5065a715e0eaae55ae3fcc681de38e29",
-    "https://esm.sh/v111/@supabase/storage-js@2.3.1/dist/module/packages/StorageFileApi.d.ts": "ff412c513a45e1e1873a6d64f77a99cac82e7c4851245a708f95e160496b5aaa",
-    "https://esm.sh/v111/@supabase/supabase-js@2.5.0/deno/supabase-js.js": "ef6f324ea901e5a861254a578f1812287966861269f469c91fcefa10875c5602",
-    "https://esm.sh/v111/@supabase/supabase-js@2.5.0/dist/module/SupabaseClient.d.ts": "4d550810e1f096297d21d2ee711e32bb13bda84c911c3a17a42750eebe8053c8",
-    "https://esm.sh/v111/@supabase/supabase-js@2.5.0/dist/module/index.d.ts": "adb81ff498121f9a100331000125a73792b95c5afe7565e0a474a31d2e18913b",
-    "https://esm.sh/v111/@supabase/supabase-js@2.5.0/dist/module/lib/SupabaseAuthClient.d.ts": "978c8106ed51ea69f1044a8231db6d60c64ae28ef5ccc9a7f787a53c48f1fefc",
-    "https://esm.sh/v111/@supabase/supabase-js@2.5.0/dist/module/lib/types.d.ts": "f66d6546209d0a183e56438eac52b2d481edc57bdbaa9e7ada5aad050dd64824",
-    "https://esm.sh/v111/@types/phoenix@1.5.5/index.d.ts": "300750545fd185531167690e3e8c9d3a801ccf74b8ec06320fc894f900471735",
-    "https://esm.sh/v111/cross-fetch@3.1.5/deno/cross-fetch.js": "98b8614cfe483226971d7d27cfb096fa10695d21614e128e14c6f329860da6e5",
-    "https://esm.sh/v111/es5-ext@0.10.62/deno/global.js": "5fe45a955818afd1e0e8ad67eeb50f62a4b543588aefd727a1f9b732121a33fa",
-    "https://esm.sh/v111/node.ns.d.ts": "0fb081f0cd2150931bd54baa04f31466abd9ca701fd9060d07931402cf8367ba",
-    "https://esm.sh/v111/websocket@1.0.34/deno/websocket.js": "96ccf86a285d4ec17aaf925325a4cecc7e035c0e5917ff0c4523c8f6641d13a4",
-    "https://raw.githubusercontent.com/RoboVault/robo-arkiver/main/mod.ts": "4fd2db73f8bd4d21ec9b89a05447d59998a0bb408bfcdb2cc7db923481f69cc0",
-    "https://raw.githubusercontent.com/RoboVault/robo-arkiver/main/src/arkiver/arkiver.ts": "afdd76a1528e161d7d3a96ddb48c60de20218244ad4d5e6142a17729d87b7240",
-    "https://raw.githubusercontent.com/RoboVault/robo-arkiver/main/src/arkiver/data-source.ts": "89c532d49aae13815ab0e93a91a0d72146bfdc0f5a964160e5aaf9f136d95dca",
-    "https://raw.githubusercontent.com/RoboVault/robo-arkiver/main/src/arkiver/entities.ts": "577a37af96fcdb7cb449d0edad7e8c9a82c6f0566b49bf94d9e7deeef22b4a4a",
-    "https://raw.githubusercontent.com/RoboVault/robo-arkiver/main/src/arkiver/manifest-builder.ts": "30a24a2fe27a07cbae03b89b56d4694ddf78918cc0ea6ae2ce7982a13c95c3c9",
-    "https://raw.githubusercontent.com/RoboVault/robo-arkiver/main/src/arkiver/providers/interfaces.ts": "48712e387dcac9370bcd746de56c31fecfe6b0e22518cf3119d2ba82c3a3dfc9",
-    "https://raw.githubusercontent.com/RoboVault/robo-arkiver/main/src/arkiver/providers/mongodb.ts": "c03bdeb8e955fb260bedd512f3189504f4ca075698996d7700e40f4e68ed369f",
-    "https://raw.githubusercontent.com/RoboVault/robo-arkiver/main/src/arkiver/store.ts": "b70d26858d21b278b85b1b2452f59455b8f482b25f1456e3a1c80c901919a1da",
-    "https://raw.githubusercontent.com/RoboVault/robo-arkiver/main/src/arkiver/types.ts": "35a050e8e836e24da09dfe6ce57f368515ad307b8c355b3a5066b22a061016ee",
-    "https://raw.githubusercontent.com/RoboVault/robo-arkiver/main/src/chains.ts": "7174174ff9fac4b5f80a8682d6b56284755a260e2da617fcf5925fec77728017",
-    "https://raw.githubusercontent.com/RoboVault/robo-arkiver/main/src/deps.ts": "d2f793f5c3096fc8f6b9ec7b6a7cd9208f85061e5abaecc8fc0178fb4117b567",
-    "https://raw.githubusercontent.com/RoboVault/robo-arkiver/main/src/graphql/builder.ts": "ff4febf2f7a16681018942c5bb2de48b7a3685692d2dc011ba9a4ce0f029b4ca",
-    "https://raw.githubusercontent.com/RoboVault/robo-arkiver/main/src/graphql/entity.ts": "dd66a7bcbf5303afc1cd5528014ae716852346ed05d018fc2d3f75583b5ee189",
-    "https://raw.githubusercontent.com/RoboVault/robo-arkiver/main/src/logger.ts": "e2595eb57d80b5eed2aa208756dc1af230499b0eb6d5f8431f525cb29789cff7",
-    "https://raw.githubusercontent.com/RoboVault/robo-arkiver/main/src/utils.ts": "fa4749f92df9e4d6c6807c3245ab6c4a4df23ac77a4cccc957a0f16b0884b137",
-    "https://raw.githubusercontent.com/hazelnutcloud/gql/master/common.ts": "f3c917a79b03525a4eeec6b1f852800aa081e44c8f1d6c97a3eddfe0edb32e27",
-    "https://raw.githubusercontent.com/hazelnutcloud/gql/master/deps.ts": "40992433042070a42e1b55e1a3bc243c6b67698e45353246d20aee05b6d8ce10",
-    "https://raw.githubusercontent.com/hazelnutcloud/gql/master/graphiql/render.ts": "97711658d7b02ee0d4d48f12c3aed34f30bbc94f5c1f1ccb8caf7d0a6f934df6",
-    "https://raw.githubusercontent.com/hazelnutcloud/gql/master/http.ts": "8106f370c3dc066998830ed841e575b4b9dacd67f011f7041b917d4cd10ed271",
-    "https://raw.githubusercontent.com/hazelnutcloud/gql/master/mod.ts": "87d0cf3562bd142c52ff402f4db9c1b0672a54c4bf7f90e57f0bdc8114b6c684",
-    "https://raw.githubusercontent.com/hazelnutcloud/gql/master/types.ts": "0ca1695e8db856e648fbc81c4fed7cba830e067a8d59ded7d6986b73c304727c"
+    "https://deno.land/x/xhr@0.3.0/mod.ts": "094aacd627fd9635cd942053bf8032b5223b909858fa9dc8ffa583752ff63b20",
+    "https://esm.sh/@supabase/supabase-js@2.5.0": "c0374f51acb9bd325e3bf9f0147dd1817eb4a293b9a5627ae3934795de18b5b6",
+    "https://esm.sh/v113/@supabase/functions-js@2.1.0/deno/functions-js.mjs": "764f18a3829c651590177b67bca04bab04238adc0654bddc1e6076d0b1d37f13",
+    "https://esm.sh/v113/@supabase/functions-js@2.1.0/dist/module/FunctionsClient.d.ts": "c2e7bcf24374e6b99863f214eeef71e13d2c271039b48c9052c97f0cb3a16950",
+    "https://esm.sh/v113/@supabase/functions-js@2.1.0/dist/module/index.d.ts": "1832b08edacd73b343430314bdf7af9ce456373fa3c5235b8dcdbbdf4e1d13ae",
+    "https://esm.sh/v113/@supabase/functions-js@2.1.0/dist/module/types.d.ts": "085a4704c1c8969bcb9188fc018792f0c4e0387c465d26512ffc91d083767b76",
+    "https://esm.sh/v113/@supabase/gotrue-js@2.16.0/deno/gotrue-js.mjs": "e6e78759e3818f50182d0f5464cc1d035a011f2a5218fa91a63e31b033b50821",
+    "https://esm.sh/v113/@supabase/gotrue-js@2.16.0/dist/module/GoTrueAdminApi.d.ts": "e26cd0616dfb78c1bd5a585ce693477968fa2d19b223b3f868e37c1b7927d16d",
+    "https://esm.sh/v113/@supabase/gotrue-js@2.16.0/dist/module/GoTrueClient.d.ts": "e38a0a3d2fb4d11f1bc0001e0507d12498136913ef86b6e7f5babac88b978fbc",
+    "https://esm.sh/v113/@supabase/gotrue-js@2.16.0/dist/module/index.d.ts": "8cdbab5746a3ce56786025593191032aeb560f933279507c260d2bb65e83b636",
+    "https://esm.sh/v113/@supabase/gotrue-js@2.16.0/dist/module/lib/errors.d.ts": "aba89c1be014c919b2ed0cd2379d71d9271f85fc8ecc850b23514710184e2b0d",
+    "https://esm.sh/v113/@supabase/gotrue-js@2.16.0/dist/module/lib/fetch.d.ts": "0124365bdd93bdaefc37112cad6eafefdb01ae36c657770a64df7dbf5f305342",
+    "https://esm.sh/v113/@supabase/gotrue-js@2.16.0/dist/module/lib/helpers.d.ts": "f0c24e68ebcf699a270047fb9ad94f769af0783f090519a045c651df14fd4f88",
+    "https://esm.sh/v113/@supabase/gotrue-js@2.16.0/dist/module/lib/types.d.ts": "d7dcd260797d043ce057feb0196afe7d069fd6a967dfca5139a815a614b3916a",
+    "https://esm.sh/v113/@supabase/postgrest-js@1.4.1/deno/postgrest-js.mjs": "43c990f8ba6cb774d40abc994287d798e948eee67729b9310a43df796d2e0cac",
+    "https://esm.sh/v113/@supabase/postgrest-js@1.4.1/dist/module/PostgrestBuilder.d.ts": "8aba1b4384974573cdd01f0fc7d688ef517d76f3f298151692b0b37249f0d1a3",
+    "https://esm.sh/v113/@supabase/postgrest-js@1.4.1/dist/module/PostgrestClient.d.ts": "70bddc51d63d92a5f6817be70f4e0d232c6758b425792adb6a9912844aa18747",
+    "https://esm.sh/v113/@supabase/postgrest-js@1.4.1/dist/module/PostgrestFilterBuilder.d.ts": "a5c93476d23858a561734a206dd583c1b0fe319f3e9856f69e79134608439e62",
+    "https://esm.sh/v113/@supabase/postgrest-js@1.4.1/dist/module/PostgrestQueryBuilder.d.ts": "39afb003a4687be50e4089b839c4f317bf0b6a2c234929a1a51bce99276831e3",
+    "https://esm.sh/v113/@supabase/postgrest-js@1.4.1/dist/module/PostgrestTransformBuilder.d.ts": "eda6937c25925489d93fb1f28b58346358d95aec887fefd5bebe4a74cf8e3948",
+    "https://esm.sh/v113/@supabase/postgrest-js@1.4.1/dist/module/index.d.ts": "fffbd398e6b4db2b1320e819d395493f3169219cfec082e09787ae2bb02baaa3",
+    "https://esm.sh/v113/@supabase/postgrest-js@1.4.1/dist/module/select-query-parser.d.ts": "60afa60217641702095795445e04149a360d7e22f662581253c7a7c86a5fb335",
+    "https://esm.sh/v113/@supabase/postgrest-js@1.4.1/dist/module/types.d.ts": "b62bb9fdf20676f829bcf01b2348c9766b5d14a0451a964496e96ac49fcc2758",
+    "https://esm.sh/v113/@supabase/realtime-js@2.7.1/deno/realtime-js.mjs": "a4ced569e938cbd2497518cb34da27cf316215eacfbc00fc1ad3883757f03cf8",
+    "https://esm.sh/v113/@supabase/realtime-js@2.7.1/dist/module/RealtimeChannel.d.ts": "25649c81d3afb47af94fcaad4e018c41082a5cabd7c7be8c31f1ae73f85a9feb",
+    "https://esm.sh/v113/@supabase/realtime-js@2.7.1/dist/module/RealtimeClient.d.ts": "1051d2176aa0bfcc715ec2f3b3ff7f0dbc289780884f78fbd896dac6a834a185",
+    "https://esm.sh/v113/@supabase/realtime-js@2.7.1/dist/module/RealtimePresence.d.ts": "9228bc335b4d5d0c81eb7d359fd1f73261620a7c316e3c94b2f7f0f7ff8c2a5f",
+    "https://esm.sh/v113/@supabase/realtime-js@2.7.1/dist/module/index.d.ts": "eeff0dbcd61707a889eb2370cf3617ef42ddc2f71d7d4d18e1e43542893c066d",
+    "https://esm.sh/v113/@supabase/realtime-js@2.7.1/dist/module/lib/constants.d.ts": "b8392f2eb7cf41c3479c142875adbbe4b48bfafdced532165abc1cc68aa20cb5",
+    "https://esm.sh/v113/@supabase/realtime-js@2.7.1/dist/module/lib/push.d.ts": "6c8e66ded1b50971ca48cbe5e33e02042f291b330f5010771925a054baec523d",
+    "https://esm.sh/v113/@supabase/realtime-js@2.7.1/dist/module/lib/serializer.d.ts": "4990f875f6e9a1898655fdba7b822222f8b930bfb7c9253b4f047aa4b05d4ca1",
+    "https://esm.sh/v113/@supabase/realtime-js@2.7.1/dist/module/lib/timer.d.ts": "ddf170afd193dc372316ed1f4a087f0e9732a5b8bd9cb9e5c3ac74f1cc676e31",
+    "https://esm.sh/v113/@supabase/storage-js@2.3.1/deno/storage-js.mjs": "587a536b48c5922b9ab08e8163888a32f544d95189d032c5b82a221cd2703eaa",
+    "https://esm.sh/v113/@supabase/storage-js@2.3.1/dist/module/StorageClient.d.ts": "716bdde7f3ea8f49606ac540ceb4b410facb9526668711ffb5676f7935f3408d",
+    "https://esm.sh/v113/@supabase/storage-js@2.3.1/dist/module/index.d.ts": "07800a0eea5587ec26d8932a4f5f10871b9e017292ab05b74b27154fb5f98860",
+    "https://esm.sh/v113/@supabase/storage-js@2.3.1/dist/module/lib/errors.d.ts": "753c82a97a0e1b05fec3989af93e4fbf2f4a3da3957584613768593ef5cc8bfc",
+    "https://esm.sh/v113/@supabase/storage-js@2.3.1/dist/module/lib/fetch.d.ts": "18b68d37f6564cc754ade6371fc7e655a775e91b10abf0f45d0c037b93436761",
+    "https://esm.sh/v113/@supabase/storage-js@2.3.1/dist/module/lib/types.d.ts": "4cc02672a0b2d54325185cb1afb1a403f5cec265267ba6f37fd82b3201811142",
+    "https://esm.sh/v113/@supabase/storage-js@2.3.1/dist/module/packages/StorageBucketApi.d.ts": "fcdbe1b00e3430099530a00a3cfb446e5065a715e0eaae55ae3fcc681de38e29",
+    "https://esm.sh/v113/@supabase/storage-js@2.3.1/dist/module/packages/StorageFileApi.d.ts": "5664b4da63c0bf4eb9eb37c6b61d2375f97d4f07c80125708209c3d9b9ea91bc",
+    "https://esm.sh/v113/@supabase/supabase-js@2.5.0/deno/supabase-js.mjs": "778237c74bc0642223f32e1f8195a880219f3fe2158f7f780da46e22c30b272e",
+    "https://esm.sh/v113/@supabase/supabase-js@2.5.0/dist/module/SupabaseClient.d.ts": "5c98b6dca9a9fec322a04cb82aabb47b8d318130c86d431eee85507401acab76",
+    "https://esm.sh/v113/@supabase/supabase-js@2.5.0/dist/module/index.d.ts": "106fa77c8b6db58896ce94fb8f977b1eeb19f108e1996051a50bd31cb28cc0d1",
+    "https://esm.sh/v113/@supabase/supabase-js@2.5.0/dist/module/lib/SupabaseAuthClient.d.ts": "5ab6f4be772002609b406614a3b568724bfc9e71695a6e52e7b5fbaf42a3dd46",
+    "https://esm.sh/v113/@supabase/supabase-js@2.5.0/dist/module/lib/types.d.ts": "5ec537e72be720b65743dc6a1c82e7f7833a528ce74e069ac0d2cef437c4f28b",
+    "https://esm.sh/v113/@types/phoenix@1.5.5/index.d.ts": "300750545fd185531167690e3e8c9d3a801ccf74b8ec06320fc894f900471735",
+    "https://esm.sh/v113/cross-fetch@3.1.5/deno/cross-fetch.mjs": "be43e2fc88afad172ee461e33d50e39d89511300013157a10008506c52fdbfd6",
+    "https://esm.sh/v113/es5-ext@0.10.62/deno/global.js": "5fe45a955818afd1e0e8ad67eeb50f62a4b543588aefd727a1f9b732121a33fa",
+    "https://esm.sh/v113/node.ns.d.ts": "0fb081f0cd2150931bd54baa04f31466abd9ca701fd9060d07931402cf8367ba",
+    "https://esm.sh/v113/websocket@1.0.34/deno/websocket.mjs": "6d41e70f548f09cc288f85119da3eed3712cbd36c17387dd91375e50b2c26b1c"
   },
   "npm": {
     "specifiers": {
       "abitype": "abitype@0.7.1_typescript@5.0.2",
-      "graphql": "graphql@16.6.0",
-      "graphql-compose": "graphql-compose@9.0.10_graphql@16.6.0",
-      "graphql-compose-mongoose": "graphql-compose-mongoose@9.8.0_graphql-compose@9.0.10__graphql@16.6.0_mongoose@7.0.2_graphql@16.6.0",
+      "graphql-compose": "graphql-compose@9.0.10",
+      "graphql-compose-mongoose": "graphql-compose-mongoose@9.8.0_graphql-compose@9.0.10_mongoose@7.0.3",
       "graphql-yoga": "graphql-yoga@3.7.3_graphql@16.6.0_@envelop+core@3.0.6",
       "lru-cache": "lru-cache@8.0.4",
       "mongoose": "mongoose@7.0.3",
@@ -303,8 +240,8 @@
           "tslib": "tslib@2.5.0"
         }
       },
-      "@peculiar/webcrypto@1.4.2": {
-        "integrity": "sha512-dMvTarTKRx3FzlRUD7Zi2qEsnWVedb/XNRvfM/JaanhTPm+ug9wPsvLXfPHDdl4mjbGdD+Lo/DXRd9sJRuQV3w==",
+      "@peculiar/webcrypto@1.4.3": {
+        "integrity": "sha512-VtaY4spKTdN5LjJ04im/d/joXuvLbQdgy5Z4DXF4MFZhQ+MTrejbNMkfZBp1Bs3O5+bFqnJgyGdPuZQflvIa5A==",
         "dependencies": {
           "@peculiar/asn1-schema": "@peculiar/asn1-schema@2.3.6",
           "@peculiar/json-schema": "@peculiar/json-schema@1.1.12",
@@ -317,8 +254,8 @@
         "integrity": "sha512-AW8PKd6iX3vAZ0vA43nOUOnbq/X5ihgU+mSXXqunMkeQADGiqw/PY0JNeYtD5sr0PAy51YPgAPbDoeapv9r8WA==",
         "dependencies": {}
       },
-      "@types/node@18.15.5": {
-        "integrity": "sha512-Ark2WDjjZO7GmvsyFFf81MXuGTA/d6oP38anyxWOL6EREyBKAxKoFHwBhaZxCfLRLpO8JgVXwqOwSwa7jRcjew==",
+      "@types/node@18.15.10": {
+        "integrity": "sha512-9avDaQJczATcXgfmMAW3MIWArOO7A+m90vuCFLr8AotWf8igO/mRoYukrk2cqZVtv38tHs33retzHEilM7FpeQ==",
         "dependencies": {}
       },
       "@types/webidl-conversions@7.0.0": {
@@ -328,7 +265,7 @@
       "@types/whatwg-url@8.2.2": {
         "integrity": "sha512-FtQu10RWgn3D9U4aazdwIE2yzphmTJREDqNdODHrbrZmmMqI0vMheC/6NE/J1Yveaj8H+ela+YwWTjq5PGmuhA==",
         "dependencies": {
-          "@types/node": "@types/node@18.15.5",
+          "@types/node": "@types/node@18.15.10",
           "@types/webidl-conversions": "@types/webidl-conversions@7.0.0"
         }
       },
@@ -340,10 +277,10 @@
         "integrity": "sha512-WKj/lI4QjnLuPrim0cfO7i+HsDSXHxNv1y0CrJhdntuO3hxWZmnXCwNDnwOvry11OjRin6cgWNF+j/9Pn8TN4w==",
         "dependencies": {}
       },
-      "@whatwg-node/fetch@0.8.3": {
-        "integrity": "sha512-qpacTdzO8z36pa3HpEXEE2PoCXS7sn3LNqr7IjDETEPWJWS0RTJMD49fL1ZKdjQrfHZNBQCRwVNOcT1RZv/xVg==",
+      "@whatwg-node/fetch@0.8.4": {
+        "integrity": "sha512-xK0NGWt49P+JmsdfN+8zmHzZoscENrV0KL1SyyncvWkc6vbFmSqGSpvItEBuhj1PAfTGFEUpyiRMCsut2hLy/Q==",
         "dependencies": {
-          "@peculiar/webcrypto": "@peculiar/webcrypto@1.4.2",
+          "@peculiar/webcrypto": "@peculiar/webcrypto@1.4.3",
           "@whatwg-node/node-fetch": "@whatwg-node/node-fetch@0.3.4",
           "busboy": "busboy@1.6.0",
           "urlpattern-polyfill": "urlpattern-polyfill@6.0.2",
@@ -363,7 +300,7 @@
       "@whatwg-node/server@0.7.5": {
         "integrity": "sha512-xTDJdPqr/wULxW3mGXQXD92SRXUm6jwQxqIvyHG17dykRTd21HuCaS2ggBn5lSAM/sYjjrT+OYv3fXbtS4+Mjw==",
         "dependencies": {
-          "@whatwg-node/fetch": "@whatwg-node/fetch@0.8.3",
+          "@whatwg-node/fetch": "@whatwg-node/fetch@0.8.4",
           "tslib": "tslib@2.5.0"
         }
       },
@@ -437,29 +374,29 @@
           "to-regex-range": "to-regex-range@5.0.1"
         }
       },
-      "graphql-compose-connection@8.2.1_graphql-compose@9.0.10__graphql@16.6.0_graphql@16.6.0": {
+      "graphql-compose-connection@8.2.1_graphql-compose@9.0.10": {
         "integrity": "sha512-75QOx1HusfkLzDlF+RMGoC0UowbZ2R7/xFRIMfbQf1gc6eeRqiGmTWFxHaUYk2WjTAB4dGO7p/gllfwqO0W/TA==",
         "dependencies": {
-          "graphql-compose": "graphql-compose@9.0.10_graphql@16.6.0"
+          "graphql-compose": "graphql-compose@9.0.10"
         }
       },
-      "graphql-compose-mongoose@9.8.0_graphql-compose@9.0.10__graphql@16.6.0_mongoose@7.0.2_graphql@16.6.0": {
+      "graphql-compose-mongoose@9.8.0_graphql-compose@9.0.10_mongoose@7.0.3": {
         "integrity": "sha512-gf5ss5UkMNqOjdr3AO7K2eF5Ak5bGT8f+eO55oMWtA8CivH5klTfP7d6+p81KaCAN0ClrAyb6qDhWosD4TYL9A==",
         "dependencies": {
           "dataloader": "dataloader@2.2.2",
-          "graphql-compose": "graphql-compose@9.0.10_graphql@16.6.0",
-          "graphql-compose-connection": "graphql-compose-connection@8.2.1_graphql-compose@9.0.10__graphql@16.6.0_graphql@16.6.0",
-          "graphql-compose-pagination": "graphql-compose-pagination@8.3.0_graphql-compose@9.0.10__graphql@16.6.0_graphql@16.6.0",
-          "mongoose": "mongoose@7.0.2"
+          "graphql-compose": "graphql-compose@9.0.10",
+          "graphql-compose-connection": "graphql-compose-connection@8.2.1_graphql-compose@9.0.10",
+          "graphql-compose-pagination": "graphql-compose-pagination@8.3.0_graphql-compose@9.0.10",
+          "mongoose": "mongoose@7.0.3"
         }
       },
-      "graphql-compose-pagination@8.3.0_graphql-compose@9.0.10__graphql@16.6.0_graphql@16.6.0": {
+      "graphql-compose-pagination@8.3.0_graphql-compose@9.0.10": {
         "integrity": "sha512-zZoBhlWD9KnAJ9AUOeFNeoE4Q/zMxZaxg0tR+HFMVNFnw7ENUnIChMWnD2uvmvik+k8Yv304hMF4n81okGVsJw==",
         "dependencies": {
-          "graphql-compose": "graphql-compose@9.0.10_graphql@16.6.0"
+          "graphql-compose": "graphql-compose@9.0.10"
         }
       },
-      "graphql-compose@9.0.10_graphql@16.6.0": {
+      "graphql-compose@9.0.10": {
         "integrity": "sha512-UsVoxfi2+c8WbHl2pEB+teoRRZoY4mbWBoijeLDGpAZBSPChnqtSRjp+T9UcouLCwGr5ooNyOQLoI3OVzU1bPQ==",
         "dependencies": {
           "graphql-type-json": "graphql-type-json@0.3.2_graphql@16.6.0"
@@ -481,7 +418,7 @@
           "@graphql-tools/utils": "@graphql-tools/utils@9.2.1_graphql@16.6.0",
           "@graphql-yoga/logger": "@graphql-yoga/logger@0.0.1",
           "@graphql-yoga/subscription": "@graphql-yoga/subscription@3.1.0",
-          "@whatwg-node/fetch": "@whatwg-node/fetch@0.8.3",
+          "@whatwg-node/fetch": "@whatwg-node/fetch@0.8.4",
           "@whatwg-node/server": "@whatwg-node/server@0.7.5",
           "dset": "dset@3.1.2",
           "graphql": "graphql@16.6.0",
@@ -545,18 +482,6 @@
           "mongodb-connection-string-url": "mongodb-connection-string-url@2.6.0",
           "saslprep": "saslprep@1.0.3",
           "socks": "socks@2.7.1"
-        }
-      },
-      "mongoose@7.0.2": {
-        "integrity": "sha512-whX+5lAOLOs6VXRr9w+6m5qb8m/IXWLLb9+0/HRUh2TiIYtTt7UvajK92zW6wllCjBkrrnz/MDIOTCWMbs8K4g==",
-        "dependencies": {
-          "bson": "bson@5.1.0",
-          "kareem": "kareem@2.5.1",
-          "mongodb": "mongodb@5.1.0",
-          "mpath": "mpath@0.9.0",
-          "mquery": "mquery@5.0.0",
-          "ms": "ms@2.1.3",
-          "sift": "sift@16.0.1"
         }
       },
       "mongoose@7.0.3": {
