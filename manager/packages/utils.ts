@@ -33,7 +33,7 @@ export const unpack = async (path: string, target: string) => {
   }
 };
 
-const supportedChains = ["avalanche"];
+const supportedChains = ["avalanche", "arbitrum"];
 
 export const collectRpcUrls = () => {
   const rpcUrls: Record<string, string> = {};
