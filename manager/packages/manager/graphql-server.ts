@@ -47,9 +47,20 @@ export class GraphQLServer {
       `../../arkives/${arkive.user_id}/${arkive.id}/${arkive.deployment.major_version}_${arkive.deployment.minor_version}/manifest.ts`,
       import.meta.url,
     ).href;
-    const { default: manifestDefault, manifestExport } = await import(
-      manifestPath
-    );
+    let manifestDefault;
+    let manifestExport;
+    try {
+      const { default: md, manifestExport: me } = await import(
+        manifestPath
+      );
+      manifestDefault = md;
+      manifestExport = me;
+    } catch (e) {
+      arkiver.logger.error(
+        `[GraphQL Server] error importing manifest for ${arkive.id}: ${e}`,
+      );
+      return;
+    }
     const manifest = manifestExport ?? manifestDefault;
     if (!manifest) {
       arkiver.logger.error(

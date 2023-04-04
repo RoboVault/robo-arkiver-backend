@@ -1,5 +1,6 @@
 import { ArkiveMessageEvent } from "../manager/types.ts";
 import { arkiver } from "../../deps.ts";
+import { logger } from "https://deno.land/x/robo_arkiver@v0.2.0/mod.ts";
 
 declare const self: Worker;
 
@@ -15,14 +16,24 @@ self.onmessage = async (e: MessageEvent<ArkiveMessageEvent>) => {
         `../../arkives/${arkive.user_id}/${arkive.id}/${arkive.deployment.major_version}_${arkive.deployment.minor_version}/manifest.ts`,
         import.meta.url,
       ).href;
-      const { default: manifestDefault, manifestExport } = await import(
-        manifestPath
-      );
+      let manifestDefault;
+      let manifestExport;
+      try {
+        const { default: md, manifestExport: me } = await import(
+          manifestPath
+        );
+        manifestDefault = md;
+        manifestExport = me;
+      } catch (e) {
+        logger.error(`error importing manifest for ${arkive.id}: ${e}`);
+        return;
+      }
       const manifest = manifestExport ?? manifestDefault;
       if (!manifest) {
-        throw new Error(
+        logger.error(
           `manifest not found for ${arkive.id} at ${manifestPath}`,
         );
+        return;
       }
       const instance = new arkiver.Arkiver({
         manifest,

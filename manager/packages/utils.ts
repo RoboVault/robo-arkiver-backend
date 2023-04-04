@@ -1,4 +1,4 @@
-import { supabase } from "../deps.ts";
+import { arkiver, supabase } from "../deps.ts";
 
 export const getEnv = (key: string, defaultValue?: string): string => {
   const value = Deno.env.get(key);
@@ -33,11 +33,9 @@ export const unpack = async (path: string, target: string) => {
   }
 };
 
-const supportedChains = ["avalanche", "arbitrum"];
-
 export const collectRpcUrls = () => {
   const rpcUrls: Record<string, string> = {};
-  for (const chain of supportedChains) {
+  for (const chain of Object.keys(arkiver.supportedChains)) {
     const rpcUrl = getEnv(`${chain.toUpperCase()}_RPC_URL`);
     if (rpcUrl) {
       rpcUrls[chain] = rpcUrl;
