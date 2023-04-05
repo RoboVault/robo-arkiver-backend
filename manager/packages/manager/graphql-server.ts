@@ -57,14 +57,14 @@ export class GraphQLServer {
       manifestExport = me;
     } catch (e) {
       arkiver.logger.error(
-        `[GraphQL Server] error importing manifest for ${arkive.id}: ${e}`,
+        `[GraphQL Server] error importing manifest for ${arkive.id}-${arkive.deployment.major_version}-${arkive.deployment.minor_version}: ${e}`,
       );
       return;
     }
     const manifest = manifestExport ?? manifestDefault;
     if (!manifest) {
       arkiver.logger.error(
-        `[GraphQL Server] manifest not found for ${arkive.id} at ${manifestPath}`,
+        `[GraphQL Server] manifest not found for ${arkive.id}-${arkive.deployment.major_version}-${arkive.deployment.minor_version} at ${manifestPath}`,
       );
       return;
     }

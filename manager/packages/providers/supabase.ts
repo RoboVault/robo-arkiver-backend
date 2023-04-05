@@ -165,6 +165,14 @@ export class SupabaseProvider implements ArkiveProvider {
   }
 
   public async getUsername(userId: string) {
+    const userRes = await this.supabase.auth.admin.getUserById(userId);
+    if (userRes.error) {
+      throw userRes.error;
+    }
+    if (userRes.data.user.user_metadata.username !== undefined) {
+      return userRes.data.user.user_metadata.username;
+    }
+
     const { data, error } = await this.supabase
       .from(getEnv("SUPABASE_PROFILE_TABLE"))
       .select("username")

@@ -79,7 +79,11 @@ export class ArkiveManager {
     const worker = this.spawnArkiverWorker(arkive);
     await this.updateDeploymentStatus(arkive, "syncing");
     this.arkives.push({ arkive, worker });
-    await this.graphQLServer.addNewArkive(arkive);
+    try {
+      await this.graphQLServer.addNewArkive(arkive);
+    } catch (e) {
+      arkiver.logger.error(e, { source: "ArkiveManager.addNewArkive" });
+    }
     arkiver.logger.info("added new arkive", arkive);
   }
 
