@@ -36,10 +36,9 @@ export const unpack = async (path: string, target: string) => {
 export const collectRpcUrls = () => {
   const rpcUrls: Record<string, string> = {};
   for (const chain of Object.keys(arkiver.supportedChains)) {
-    const rpcUrl = getEnv(`${chain.toUpperCase()}_RPC_URL`);
-    if (rpcUrl) {
-      rpcUrls[chain] = rpcUrl;
-    } 
+	try {
+		rpcUrls[chain] = getEnv(`${chain.toUpperCase()}_RPC_URL`);
+	} catch (e) {}
   }
   return rpcUrls;
 };
