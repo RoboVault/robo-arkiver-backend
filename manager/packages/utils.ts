@@ -39,11 +39,7 @@ export const collectRpcUrls = () => {
     const rpcUrl = getEnv(`${chain.toUpperCase()}_RPC_URL`);
     if (rpcUrl) {
       rpcUrls[chain] = rpcUrl;
-    } else {
-      throw new Error(
-        `Missing environment variable: ${chain.toUpperCase()}_RPC_URL`,
-      );
-    }
+    } 
   }
   return rpcUrls;
 };
