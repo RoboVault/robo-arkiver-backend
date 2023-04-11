@@ -3,7 +3,7 @@ import { arkiver } from "./deps.ts";
 import { ArkiveManager } from "./packages/manager/manager.ts";
 
 if (import.meta.main) {
-  arkiver.logger.info("Starting Arkiver...");
+  arkiver.logger().info("Starting Arkiver...");
   const manager = new ArkiveManager();
   await manager.init();
 }

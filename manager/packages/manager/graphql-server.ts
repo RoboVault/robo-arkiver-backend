@@ -22,14 +22,14 @@ export class GraphQLServer {
   }
 
   async run() {
-    arkiver.logger.info("[GraphQL Server] Connecting to MongoDB");
+    arkiver.logger().info("[GraphQL Server] Connecting to MongoDB");
     await mongoose.connect(getEnv("MONGO_CONNECTION"));
-    arkiver.logger.info("[GraphQL Server] Connected to MongoDB");
+    arkiver.logger().info("[GraphQL Server] Connected to MongoDB");
 
     http.serve(async (req) => await this.handleRequest(req), {
       port: Number(getEnv("GRAPHQL_SERVER_PORT")),
       onListen: () => {
-        arkiver.logger.info(
+        arkiver.logger().info(
           `[GraphQL Server] Running on port ${getEnv("GRAPHQL_SERVER_PORT")}`,
         );
       },
@@ -40,7 +40,7 @@ export class GraphQLServer {
     const username = await this.arkiverProvider.getUsername(arkive.user_id);
     const path = `/${username}/${arkive.name}`;
     const pathWithVersion = `${path}/${arkive.deployment.major_version}`;
-    arkiver.logger.info(
+    arkiver.logger().info(
       `[GraphQL Server] Adding new arkive: ${pathWithVersion}, ${path}`,
     );
     const manifestPath = new URL(
@@ -56,14 +56,14 @@ export class GraphQLServer {
       manifestDefault = md;
       manifestExport = me;
     } catch (e) {
-      arkiver.logger.error(
+      arkiver.logger().error(
         `[GraphQL Server] error importing manifest for ${arkive.id}-${arkive.deployment.major_version}-${arkive.deployment.minor_version}: ${e}`,
       );
       return;
     }
     const manifest = manifestExport ?? manifestDefault;
     if (!manifest) {
-      arkiver.logger.error(
+      arkiver.logger().error(
         `[GraphQL Server] manifest not found for ${arkive.id}-${arkive.deployment.major_version}-${arkive.deployment.minor_version} at ${manifestPath}`,
       );
       return;

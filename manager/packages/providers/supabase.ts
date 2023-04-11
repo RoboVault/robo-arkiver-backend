@@ -82,7 +82,7 @@ export class SupabaseProvider implements ArkiveProvider {
               ...e,
               name: "SupabaseProvider.listenNewArkive",
             } satisfies Error;
-            arkiver.logger.error(error, {
+            arkiver.logger().error(error, {
               source: "SupabaseProvider.listenNewArkive",
             });
             return;
@@ -183,6 +183,6 @@ export class SupabaseProvider implements ArkiveProvider {
     if (this.deletedArkiveListener) {
       this.deletedArkiveListener.unsubscribe();
     }
-    arkiver.logger.info("closed");
+    arkiver.logger().info("closed");
   }
 }

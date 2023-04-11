@@ -35,13 +35,13 @@ export class ArkiveManager {
         }),
       );
     } catch (e) {
-      arkiver.logger.error(e, { source: "ArkiveManager.init" });
+      arkiver.logger().error(e, { source: "ArkiveManager.init" });
     }
   }
 
   private listenNewArkives() {
     this.arkiveProvider.listenNewArkive(async (arkive: arkiverTypes.Arkive) => {
-      arkiver.logger.info("new arkive", arkive);
+      arkiver.logger().info("new arkive", arkive);
       // only remove previous versions if on the same major version.
       // old major versions will be removed once the new version is synced
       const previousArkives = this.getPreviousVersions(arkive);
@@ -61,20 +61,20 @@ export class ArkiveManager {
 
       await this.addNewArkive(arkive);
     });
-    arkiver.logger.info("listening for new arkives");
+    arkiver.logger().info("listening for new arkives");
   }
 
   private listenForDeletedArkives() {
     this.arkiveProvider.listenDeletedArkive(async ({ id }) => {
-      arkiver.logger.info("deleting arkives", id);
+      arkiver.logger().info("deleting arkives", id);
       await this.removeAllArkives(id);
-      arkiver.logger.info("deleted arkives", id);
+      arkiver.logger().info("deleted arkives", id);
     });
-    arkiver.logger.info("listening for deleted arkives");
+    arkiver.logger().info("listening for deleted arkives");
   }
 
   private async addNewArkive(arkive: arkiverTypes.Arkive) {
-    arkiver.logger.info("adding new arkive", arkive);
+    arkiver.logger().info("adding new arkive", arkive);
     await this.arkiveProvider.pullArkive(arkive);
     const worker = this.spawnArkiverWorker(arkive);
     await this.updateDeploymentStatus(arkive, "syncing");
@@ -82,21 +82,21 @@ export class ArkiveManager {
     try {
       await this.graphQLServer.addNewArkive(arkive);
     } catch (e) {
-      arkiver.logger.error(e, { source: "ArkiveManager.addNewArkive" });
+      arkiver.logger().error(e, { source: "ArkiveManager.addNewArkive" });
     }
-    arkiver.logger.info("added new arkive", arkive);
+    arkiver.logger().info("added new arkive", arkive);
   }
 
   // this is called when an arkive is deleted by the user which means the record is no longer in the tables
   private async removeAllArkives(id: number) {
-    arkiver.logger.info("removing arkives", id);
+    arkiver.logger().info("removing arkives", id);
     const deletedArkives = this.arkives.filter((a) => a.arkive.id === id);
     await Promise.all(deletedArkives.map(async (arkive) => {
       await this.removePackage(arkive.arkive);
       arkive.worker.terminate();
     }));
     this.arkives = this.arkives.filter((a) => a.arkive.id !== id);
-    arkiver.logger.info("removed arkives", id);
+    arkiver.logger().info("removed arkives", id);
   }
 
   // this is called in two places: when a new minor version is added (listenNewArkives)
@@ -104,7 +104,7 @@ export class ArkiveManager {
   private async removeArkive(
     arkive: { arkive: arkiverTypes.Arkive; worker: Worker },
   ) {
-    arkiver.logger.info("removing arkive", arkive);
+    arkiver.logger().info("removing arkive", arkive);
     await this.removePackage(arkive.arkive);
     await this.updateDeploymentStatus(
       arkive.arkive,
@@ -135,7 +135,7 @@ export class ArkiveManager {
 
     worker.onmessage = async (e: MessageEvent<ArkiveMessageEvent>) => {
       if (e.data.topic === "workerError") {
-        arkiver.logger.error(e.data.data.error, {
+        arkiver.logger().error(e.data.data.error, {
           source: "worker-arkive-" + e.data.data.arkive.id,
         });
       } else if (e.data.topic === "synced") {
@@ -147,13 +147,13 @@ export class ArkiveManager {
               previousVersion.arkive.deployment.major_version <
                 arkive.deployment.major_version
             ) {
-              arkiver.logger.info(
+              arkiver.logger().info(
                 "removing old major version",
                 previousVersion.arkive,
               );
               await this.removeArkive(previousVersion);
               this.dataProvider.deleteArkiveData(previousVersion.arkive);
-              arkiver.logger.info(
+              arkiver.logger().info(
                 "removed old major version",
                 previousVersion.arkive,
               );
@@ -164,14 +164,14 @@ export class ArkiveManager {
             "synced",
           );
         } catch (error) {
-          arkiver.logger.error(error, {
+          arkiver.logger().error(error, {
             source: "worker-arkive-synced-" + e.data.data.arkive.id,
           });
         }
       }
     };
     worker.onerror = (e) => {
-      arkiver.logger.error(e.error, {
+      arkiver.logger().error(e.error, {
         source: "worker-arkive-" + arkive.id,
       });
     };
@@ -204,7 +204,7 @@ export class ArkiveManager {
       `../packages/${path}/${arkive.deployment.major_version}_${arkive.deployment.minor_version}`,
       import.meta.url,
     );
-    arkiver.logger.info("removing package", localDir.pathname);
+    arkiver.logger().info("removing package", localDir.pathname);
     await rm(localDir.pathname, { recursive: true });
   }
 

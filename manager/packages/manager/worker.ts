@@ -4,14 +4,14 @@ import { logger } from "https://deno.land/x/robo_arkiver@v0.2.0/mod.ts";
 
 declare const self: Worker;
 
-arkiver.logger.info("worker started");
+arkiver.logger().info("worker started");
 
 self.onmessage = async (e: MessageEvent<ArkiveMessageEvent>) => {
-  arkiver.logger.info("worker received message", e.data);
+  arkiver.logger().info("worker received message", e.data);
   switch (e.data.topic) {
     case "initArkive": {
       const { arkive, mongoConnection, rpcUrls } = e.data.data;
-      arkiver.logger.info("initializing arkive", arkive);
+      arkiver.logger().info("initializing arkive", arkive);
       const manifestPath = new URL(
         `../../arkives/${arkive.user_id}/${arkive.id}/${arkive.deployment.major_version}_${arkive.deployment.minor_version}/manifest.ts`,
         import.meta.url,
