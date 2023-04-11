@@ -3,9 +3,20 @@ import { getEnv } from "../_shared/utils.ts";
 
 export const del = async (
   supabase: SupabaseClient,
-  params: { id: string; userId: string },
+  params: { arkiveName: string; userId: string },
 ) => {
-  const { id, userId } = params;
+  const { arkiveName, userId } = params;
+
+  const arkiveRes = await supabase.from(getEnv("ARKIVE_TABLE"))
+    .select("*")
+    .eq("name", arkiveName)
+    .eq("user_id", userId);
+
+  if (arkiveRes.error) {
+    throw arkiveRes.error;
+  }
+
+  const id = arkiveRes.data[0].id;
 
   const delDeploymentRes = await supabase
     .from(getEnv("DEPLOYMENTS_TABLE"))

@@ -49,11 +49,11 @@ async function handle(req: Request, supabase: SupabaseClient) {
     }
     case "DELETE": {
       const urlPattern = new URLPattern({
-        pathname: "/arkives/:id",
+        pathname: "/arkives/:arkiveName",
       });
       if (!urlPattern.test(url)) throw new HttpError(400, "Bad Request");
       const matcher = urlPattern.exec(url);
-      const id = matcher!.pathname.groups.id;
+      const arkiveName = matcher!.pathname.groups.arkiveName;
 
       const userIdRes = await supabase.auth.getUser();
       if (userIdRes.error) {
@@ -61,7 +61,7 @@ async function handle(req: Request, supabase: SupabaseClient) {
       }
       const userId = userIdRes.data.user.id;
 
-      const data = await del(supabase, { id, userId });
+      const data = await del(supabase, { arkiveName, userId });
       return data;
     }
     default:
