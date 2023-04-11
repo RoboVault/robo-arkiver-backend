@@ -8,3 +8,4 @@ export * as graphQLCompose from "npm:graphql-compose";
 export * as graphQLComposeMongoose from "npm:graphql-compose-mongoose";
 export * as grapQLYoga from "npm:graphql-yoga";
 export * as http from "https://deno.land/std@0.181.0/http/mod.ts";
+export * as log from "https://deno.land/std@0.181.0/log/mod.ts";

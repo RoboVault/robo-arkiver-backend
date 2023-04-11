@@ -1,15 +1,27 @@
 import { ArkiveMessageEvent } from "../manager/types.ts";
-import { arkiver } from "../../deps.ts";
+import { arkiver, log } from "../../deps.ts";
 
 declare const self: Worker;
 
-arkiver.logger().info("worker started");
-
 self.onmessage = async (e: MessageEvent<ArkiveMessageEvent>) => {
-  arkiver.logger().info("worker received message", e.data);
   switch (e.data.topic) {
     case "initArkive": {
       const { arkive, mongoConnection, rpcUrls } = e.data.data;
+      log.setup({
+        handlers: {
+          arkiver: new arkiver.ArkiveConsoleLogHandler("DEBUG", {
+            arkiveName: arkive.name,
+            arkiveId: arkive.id,
+            arkiveVersion: arkive.deployment.major_version,
+          }),
+        },
+        loggers: {
+          arkiver: {
+            level: "DEBUG",
+            handlers: ["arkiver"],
+          },
+        },
+      });
       arkiver.logger().info("initializing arkive", arkive);
       const manifestPath = new URL(
         `../../arkives/${arkive.user_id}/${arkive.id}/${arkive.deployment.major_version}_${arkive.deployment.minor_version}/manifest.ts`,
@@ -24,7 +36,9 @@ self.onmessage = async (e: MessageEvent<ArkiveMessageEvent>) => {
         manifestDefault = md;
         manifestExport = me;
       } catch (e) {
-        arkiver.logger().error(`error importing manifest for ${arkive.id}: ${e}`);
+        arkiver.logger().error(
+          `error importing manifest for ${arkive.id}: ${e.stack}`,
+        );
         return;
       }
       const manifest = manifestExport ?? manifestDefault;
