@@ -1,6 +1,6 @@
 import { ArkiveMessageEvent } from "../manager/types.ts";
 import { arkiver } from "../../deps.ts";
-import { logger } from "https://deno.land/x/robo_arkiver@v0.2.0/mod.ts";
+import { logger } from "https://deno.land/x/robo_arkiver/mod.ts";
 
 declare const self: Worker;
 
