@@ -50,7 +50,7 @@ export class GraphQLServer {
     let manifestDefault;
     let manifestExport;
     try {
-      const { default: md, manifestExport: me } = await import(
+      const { default: md, manifest: me } = await import(
         manifestPath
       );
       manifestDefault = md;
