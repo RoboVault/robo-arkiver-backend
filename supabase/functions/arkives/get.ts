@@ -7,9 +7,10 @@ export async function get(
   params: {
     username: string | null;
     name: string | null;
+    userId: string | undefined;
   },
 ) {
-  const { username, name } = params;
+  const { username, name, userId } = params;
 
   const query = supabase
     .from(getEnv("ARKIVE_TABLE"))
@@ -31,6 +32,13 @@ export async function get(
 
     const userId = profileRes.data.id;
 
+    query.eq("user_id", userId);
+
+    if (name) {
+      query.eq("name", name);
+    }
+  } else {
+    if (!userId) throw new HttpError(401, "Unauthorized");
     query.eq("user_id", userId);
 
     if (name) {

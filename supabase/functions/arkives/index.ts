@@ -19,7 +19,9 @@ async function handle(req: Request, supabase: SupabaseClient) {
     case "GET": {
       const username = url.searchParams.get("username");
       const name = url.searchParams.get("name");
-      const data = await get(supabase, { username, name });
+      const userIdRes = await supabase.auth.getUser();
+      const userId = userIdRes.data.user?.id;
+      const data = await get(supabase, { username, name, userId });
       return data;
     }
     case "POST": {
