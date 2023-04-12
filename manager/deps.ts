@@ -9,3 +9,5 @@ export * as graphQLComposeMongoose from "npm:graphql-compose-mongoose";
 export * as grapQLYoga from "npm:graphql-yoga";
 export * as http from "https://deno.land/std@0.181.0/http/mod.ts";
 export * as log from "https://deno.land/std@0.181.0/log/mod.ts";
+export * as logHandlers from "https://deno.land/std@0.181.0/log/handlers.ts";
+export * as influx from "npm:@influxdata/influxdb-client";

@@ -1,5 +1,7 @@
 import { ArkiveMessageEvent } from "../manager/types.ts";
-import { arkiver, log } from "../../deps.ts";
+import { arkiver, influx, log } from "../../deps.ts";
+import { ArkiveInfluxLogger } from "./logger.ts";
+import { getEnv } from "../utils.ts";
 
 declare const self: Worker;
 
@@ -7,18 +9,37 @@ self.onmessage = async (e: MessageEvent<ArkiveMessageEvent>) => {
   switch (e.data.topic) {
     case "initArkive": {
       const { arkive, mongoConnection, rpcUrls } = e.data.data;
+
+      const writer = new influx.InfluxDB({
+        url: getEnv("INFLUX_URL"),
+        token: getEnv("INFLUX_TOKEN"),
+      }).getWriteApi(getEnv("INFLUX_ORG"), getEnv("INFLUX_BUCKET"));
+
       log.setup({
         handlers: {
-          arkiver: new arkiver.ArkiveConsoleLogHandler("DEBUG", {
-            arkiveName: arkive.name,
-            arkiveId: arkive.id,
-            arkiveVersion: arkive.deployment.major_version,
+          console: new arkiver.ArkiveConsoleLogHandler("INFO", {
+            arkive: {
+              name: arkive.name,
+              id: arkive.id,
+              majorVersion: arkive.deployment.major_version,
+              minorVersion: arkive.deployment.minor_version,
+            },
+          }),
+          influx: new ArkiveInfluxLogger("DEBUG", {
+            writer,
+            tags: {
+              source: "arkive",
+              name: arkive.name,
+              id: arkive.id.toString(),
+              majorVersion: arkive.deployment.major_version.toString(),
+              minorVersion: arkive.deployment.minor_version.toString(),
+            },
           }),
         },
         loggers: {
           arkiver: {
             level: "DEBUG",
-            handlers: ["arkiver"],
+            handlers: ["console", "influx"],
           },
         },
       });
