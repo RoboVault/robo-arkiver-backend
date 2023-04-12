@@ -5,5 +5,12 @@
 	"imports": {
 		"https://deno.land/x/robo_arkiver@v0.3.6/": "https://deno.land/x/robo_arkiver/",
 		"https://deno.land/x/robo_arkiver@v0.3.3/": "https://deno.land/x/robo_arkiver/"
+	},
+	"fmt": {
+		"options": {
+			"useTabs": true,
+			"semiColons": false,
+			"singleQuote": true
+		}
 	}
 }

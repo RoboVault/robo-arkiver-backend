@@ -1,10 +1,10 @@
-import { arkiverTypes, mongoose } from "../../deps.ts";
-import { DataProvider } from "./interfaces.ts";
+import { arkiverTypes, mongoose } from '../../deps.ts'
+import { DataProvider } from './interfaces.ts'
 
 export class MongoDataProvider implements DataProvider {
-  constructor() {}
+	constructor() {}
 
-  public async deleteArkiveData(_arkive: arkiverTypes.Arkive): Promise<void> {
-    await mongoose.connection.dropDatabase();
-  }
+	public async deleteArkiveData(_arkive: arkiverTypes.Arkive): Promise<void> {
+		await mongoose.connection.dropDatabase()
+	}
 }
