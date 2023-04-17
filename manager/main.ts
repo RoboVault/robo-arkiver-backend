@@ -28,6 +28,7 @@ if (import.meta.main) {
 		},
 	})
 	arkiver.logger().info('Starting Arkiver...')
-	const manager = new ArkiveManager()
+	const dev = Deno.env.get('DEV') !== undefined
+	const manager = new ArkiveManager({ dev })
 	await manager.init()
 }

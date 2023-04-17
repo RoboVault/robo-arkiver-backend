@@ -1,10 +1,13 @@
 import { SupabaseProvider } from '../providers/supabase.ts'
 import { ArkiveProvider, DataProvider } from '../providers/interfaces.ts'
-import { arkiver, arkiverTypes } from '../../deps.ts'
+import { arkiver, arkiverTypes, path } from '../../deps.ts'
 import { collectRpcUrls, getEnv, rm } from '../utils.ts'
 import { ArkiveMessageEvent, NewArkiveMessageEvent } from './types.ts'
 import { MongoDataProvider } from '../providers/mongodb.ts'
 import { GraphQLServer } from './graphql-server.ts'
+import { LocalArkiveProvider } from '../local-arkive-provider/local-arkive-provider.ts'
+
+export const arkivesDir = '../../arkives'
 
 export class ArkiveManager {
 	private arkiveProvider: ArkiveProvider
@@ -13,11 +16,13 @@ export class ArkiveManager {
 	private arkives: { arkive: arkiverTypes.Arkive; worker: Worker }[] = []
 	private rpcUrls: Record<string, string>
 
-	constructor() {
+	constructor(params: { dev: boolean }) {
 		this.removeAllArkives = this.removeAllArkives.bind(this)
 		this.addNewArkive = this.addNewArkive.bind(this)
 
-		this.arkiveProvider = new SupabaseProvider()
+		this.arkiveProvider = params.dev
+			? new LocalArkiveProvider()
+			: new SupabaseProvider()
 		this.dataProvider = new MongoDataProvider()
 		this.graphQLServer = new GraphQLServer(this.arkiveProvider) // TODO implement GraphQL server
 		this.rpcUrls = collectRpcUrls()
@@ -199,9 +204,12 @@ export class ArkiveManager {
 	}
 
 	private async removePackage(arkive: arkiverTypes.Arkive) {
-		const path = `${arkive.user_id}/${arkive.id}`
+		const arkivePath = `${arkive.user_id}/${arkive.id}`
 		const localDir = new URL(
-			`../packages/${path}/${arkive.deployment.major_version}_${arkive.deployment.minor_version}`,
+			path.join(
+				arkivesDir,
+				`/${arkivePath}/${arkive.deployment.major_version}_${arkive.deployment.minor_version}`,
+			),
 			import.meta.url,
 		)
 		arkiver.logger().info('removing package', localDir.pathname)

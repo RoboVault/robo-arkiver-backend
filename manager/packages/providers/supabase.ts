@@ -1,6 +1,12 @@
 import { ArkiveProvider } from './interfaces.ts'
-import { arkiver, arkiverTypes, supabase } from '../../deps.ts'
+import {
+	arkiver,
+	arkiverTypes,
+	path as denoPath,
+	supabase,
+} from '../../deps.ts'
 import { getEnv, getSupabaseClient, rm, unpack } from '../utils.ts'
+import { arkivesDir } from '../manager/manager.ts'
 
 interface RawArkive extends Omit<arkiverTypes.Arkive, 'deployment'> {
 	deployments: arkiverTypes.Deployment[]
@@ -135,11 +141,11 @@ export class SupabaseProvider implements ArkiveProvider {
 		}
 
 		const localDir = new URL(
-			`../../arkives/${path}/${version}`,
+			denoPath.join(arkivesDir, `/${path}/${version}`),
 			import.meta.url,
 		)
 		const localPath = new URL(
-			`../../arkives/${path}/${version}.tar.gz`,
+			denoPath.join(arkivesDir, `/${path}/${version}.tar.gz`),
 			import.meta.url,
 		)
 

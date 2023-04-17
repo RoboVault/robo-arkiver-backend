@@ -5,9 +5,11 @@ import {
 	grapQLYoga,
 	http,
 	mongoose,
+	path as denoPath,
 } from '../../deps.ts'
 import { ArkiveProvider } from '../providers/interfaces.ts'
 import { getEnv } from '../utils.ts'
+import { arkivesDir } from './manager.ts'
 
 export class GraphQLServer {
 	private pathToYoga: Map<
@@ -44,7 +46,10 @@ export class GraphQLServer {
 			`[GraphQL Server] Adding new arkive: ${pathWithVersion}, ${path}`,
 		)
 		const manifestPath = new URL(
-			`../../arkives/${arkive.user_id}/${arkive.id}/${arkive.deployment.major_version}_${arkive.deployment.minor_version}/manifest.ts`,
+			denoPath.join(
+				arkivesDir,
+				`/${arkive.user_id}/${arkive.id}/${arkive.deployment.major_version}_${arkive.deployment.minor_version}/manifest.ts`,
+			),
 			import.meta.url,
 		).href
 		let manifestDefault

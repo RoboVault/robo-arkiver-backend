@@ -1,7 +1,8 @@
 import { ArkiveMessageEvent } from '../manager/types.ts'
-import { arkiver, influx, log } from '../../deps.ts'
+import { arkiver, influx, log, path as denoPath } from '../../deps.ts'
 import { ArkiveInfluxLogger } from './logger.ts'
 import { getEnv } from '../utils.ts'
+import { arkivesDir } from './manager.ts'
 
 declare const self: Worker
 
@@ -45,7 +46,10 @@ self.onmessage = async (e: MessageEvent<ArkiveMessageEvent>) => {
 			})
 			arkiver.logger().info('initializing arkive', arkive)
 			const manifestPath = new URL(
-				`../../arkives/${arkive.user_id}/${arkive.id}/${arkive.deployment.major_version}_${arkive.deployment.minor_version}/manifest.ts`,
+				denoPath.join(
+					arkivesDir,
+					`/${arkive.user_id}/${arkive.id}/${arkive.deployment.major_version}_${arkive.deployment.minor_version}/manifest.ts`,
+				),
 				import.meta.url,
 			).href
 			let manifestDefault
