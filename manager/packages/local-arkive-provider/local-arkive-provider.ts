@@ -11,7 +11,7 @@ export class LocalArkiveProvider implements ArkiveProvider {
 	currentId = 0
 	nameToArkive = new Map<
 		string,
-		{ id: number; majorVersion: number; minorVersion: number }
+		{ id: number; majorVersion: number; minorVersion: number; status: string }
 	>()
 
 	constructor() {
@@ -35,6 +35,38 @@ export class LocalArkiveProvider implements ArkiveProvider {
 	}
 
 	async handleRequest(req: Request): Promise<Response> {
+		if (req.method === 'GET') {
+			const arkives = []
+
+			for (const [name, arkive] of this.nameToArkive.entries()) {
+				arkives.push({
+					created_at: new Date().toISOString(),
+					id: arkive.id,
+					name,
+					public: true,
+					user_id: 'dev',
+					deployments: [{
+						arkive_id: arkive.id,
+						status: arkive.status,
+						id: 0,
+						created_at: new Date().toISOString(),
+						file_path: join(
+							new URL(import.meta.url).pathname,
+							'../',
+							arkivesDir,
+							'dev',
+							arkive.id.toString(),
+							`${arkive.majorVersion}_${arkive.minorVersion}`,
+						),
+						major_version: arkive.majorVersion,
+						minor_version: arkive.minorVersion,
+					}],
+				})
+			}
+
+			return new Response(JSON.stringify(arkives))
+		}
+
 		if (req.method === 'POST') {
 			if (!this.newArkiveHandler) {
 				console.log(this.newArkiveHandler)
@@ -51,21 +83,22 @@ export class LocalArkiveProvider implements ArkiveProvider {
 
 			let arkive = this.nameToArkive.get(arkiveData.name)
 
+			if (arkiveData.majorUpdate && arkive) {
+				arkive.minorVersion = 0
+				arkive.majorVersion++
+			} else if (arkive) {
+				arkive.minorVersion++
+			}
+
 			if (!arkive) {
 				arkive = {
 					id: this.currentId,
 					majorVersion: 1,
 					minorVersion: 0,
+					status: 'pending',
 				}
 				this.currentId++
 				this.nameToArkive.set(arkiveData.name, arkive)
-			}
-
-			if (arkiveData.majorUpdate) {
-				arkive.minorVersion = 0
-				arkive.majorVersion++
-			} else {
-				arkive.minorVersion++
 			}
 
 			const localDir = join(
@@ -138,10 +171,19 @@ export class LocalArkiveProvider implements ArkiveProvider {
 
 	async pullArkive(_arkives: arkiverTypes.Arkive): Promise<void> {}
 
+	// deno-lint-ignore require-await
 	async updateDeploymentStatus(
-		_arkive: arkiverTypes.Arkive,
-		_status: string,
-	): Promise<void> {}
+		arkive: arkiverTypes.Arkive,
+		status: string,
+	): Promise<void> {
+		const arkiveData = this.nameToArkive.get(arkive.name)
+
+		if (!arkiveData) {
+			return
+		}
+
+		arkiveData.status = status
+	}
 
 	getUsername(userId: string): Promise<string> {
 		return Promise.resolve(userId)
