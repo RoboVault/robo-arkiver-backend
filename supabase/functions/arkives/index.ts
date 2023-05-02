@@ -17,11 +17,17 @@ async function handle(req: Request, supabase: SupabaseClient) {
   const url = new URL(req.url);
   switch (req.method) {
     case "GET": {
-      const username = url.searchParams.get("username");
-      const name = url.searchParams.get("name");
-      const userIdRes = await supabase.auth.getUser();
-      const userId = userIdRes.data.user?.id;
-      const data = await get(supabase, { username, name, userId });
+      const fullUrl = new URLPattern({
+        pathname: "/arkives/:username/:arkivename",
+      });
+      const groups = fullUrl.exec(url)?.pathname.groups;
+
+      const partialUrl = new URLPattern({
+        pathname: "/arkives/:username",
+      });
+      const username = partialUrl.exec(url)?.pathname.groups.username;
+
+      const data = await get(supabase, { username: groups?.username ?? username, arkivename: groups?.arkivename });
       return data;
     }
     case "POST": {
@@ -41,7 +47,7 @@ async function handle(req: Request, supabase: SupabaseClient) {
       });
 
       if (!urlPattern.test(url)) throw new HttpError(400, "Bad Request");
-      const id = urlPattern.exec(url)!.pathname.groups.id;
+      const id = urlPattern.exec(url)!.pathname.groups.id!;
 
       const formData = await req.formData();
       const params = Object.fromEntries(formData.entries());
@@ -55,7 +61,7 @@ async function handle(req: Request, supabase: SupabaseClient) {
       });
       if (!urlPattern.test(url)) throw new HttpError(400, "Bad Request");
       const matcher = urlPattern.exec(url);
-      const arkiveName = matcher!.pathname.groups.arkiveName;
+      const arkiveName = matcher!.pathname.groups.arkiveName!;
 
       const userIdRes = await supabase.auth.getUser();
       if (userIdRes.error) {
@@ -102,6 +108,7 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
+    console.log(error)
     if (error instanceof HttpError || error.status) {
       return new Response(JSON.stringify({ error: error.message }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -110,7 +117,7 @@ serve(async (req) => {
     }
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 400,
+      status: 500,
     });
   }
 });

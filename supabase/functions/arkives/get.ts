@@ -1,62 +1,87 @@
-import { SupabaseClient } from "../_shared/deps.ts";
+import { SupabaseClient, postgres } from "../_shared/deps.ts";
+import { getUserIdFromUsername } from "../_shared/username.ts";
 import { getEnv } from "../_shared/utils.ts";
-import { HttpError } from "../_shared/http_error.ts";
 
 export async function get(
   supabase: SupabaseClient,
   params: {
-    username: string | null;
-    name: string | null;
-    userId: string | undefined;
+    username?: string;
+    arkivename?: string;
   },
 ) {
-  const { username, name, userId } = params;
+  const { username, arkivename } = params;
 
-  const query = supabase
-    .from(getEnv("ARKIVE_TABLE"))
-    .select("*, deployments(*)");
+  const publicOnly = await shouldReturnOnlyPublic(supabase, params);
 
-  if (username) {
-    const profileRes = await supabase
-      .from(getEnv("PROFILE_TABLE"))
-      .select<"id", { id: string }>("id")
-      .eq("username", username)
-      .single();
+  const sql = postgres(getEnv("SUPABASE_DB_URL"), {
+    port: 6543,
+    password: getEnv("SUPABASE_DB_PASSWORD"),
+  });
 
-    if (profileRes.error) {
-      if (profileRes.error.code === "PGRST116") {
-        throw new HttpError(404, "Username Not Found");
-      }
-      throw profileRes.error;
+  const arkives = await sql`
+    SELECT
+      a.id,
+      a.created_at,
+      a.name,
+      a.user_id,
+      a.public,
+      a.thumbnail_url,
+      a.code_repo_url,
+      a.project_url,
+      up.username,
+      ARRAY_AGG(
+        json_build_object(
+          'deployment_id', d.id,
+          'deployment_created_at', d.created_at,
+          'major_version', d.major_version,
+          'minor_version', d.minor_version,
+          'status', d.status,
+          'arkive_id', d.arkive_id,
+          'file_path', d.file_path
+        )
+      ) AS deployments
+    FROM
+      public.arkive a
+    JOIN
+      public.user_profile up ON a.user_id = up.id
+    LEFT JOIN
+      public.deployments d ON a.id = d.arkive_id
+    ${publicOnly
+      ? username
+        ? arkivename
+          ? sql`WHERE a.public = true AND up.username = ${username} AND a.name = ${arkivename}`
+          : sql`WHERE a.public = true AND up.username = ${username}`
+        : sql`WHERE a.public = true`
+      : username
+        ? arkivename
+          ? sql`WHERE up.username = ${username} AND a.name = ${arkivename}`
+          : sql`WHERE up.username = ${username}`
+        : sql`WHERE a.name IN ()`  // return empty array
     }
+    GROUP BY
+      a.id, up.username;
+  `
 
-    const userId = profileRes.data.id;
+  return arkives;
+}
 
-    query.eq("user_id", userId);
+const shouldReturnOnlyPublic = async (client: SupabaseClient, params: {
+  username?: string;
+  arkivename?: string;
+}) => {
+  const { username, arkivename } = params;
 
-    if (name) {
-      query.eq("name", name);
-    }
-  } else {
-    if (!userId) throw new HttpError(401, "Unauthorized");
-    query.eq("user_id", userId);
-
-    if (name) {
-      query.eq("name", name);
-    }
+  if (!username || !arkivename) {
+    return true;
   }
 
-  const { data, error } = await query;
+  const { data: { user } } = await client.auth.getUser()
 
-  if (error) {
-    throw error;
+  if (!user) {
+    return true;
   }
 
-  if (data.length > 0) {
-    return data;
-  }
+  const userIdFromUsername = await getUserIdFromUsername(client, username);
 
-  if (username && name) throw new HttpError(404, "Arkive Not Found");
-
-  return data;
+  return userIdFromUsername !== user.id;
 }
