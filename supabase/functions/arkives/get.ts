@@ -1,4 +1,5 @@
 import { SupabaseClient, postgres } from "../_shared/deps.ts";
+import { HttpError } from "../_shared/http_error.ts";
 import { getUserIdFromUsername } from "../_shared/username.ts";
 import { getEnv } from "../_shared/utils.ts";
 
@@ -56,32 +57,40 @@ export async function get(
         ? arkivename
           ? sql`WHERE up.username = ${username} AND a.name = ${arkivename}`
           : sql`WHERE up.username = ${username}`
-        : sql`WHERE a.name IN ()`  // return empty array
+        : sql`WHERE a.public = true`  // return empty array
     }
     GROUP BY
       a.id, up.username;
   `
+
+  if (username && arkivename && arkives.length === 0) {
+    throw new HttpError(404, "Arkive not found");
+  }
+
+  if (username && arkivename) {
+    return arkives[0];
+  }
 
   return arkives;
 }
 
 const shouldReturnOnlyPublic = async (client: SupabaseClient, params: {
   username?: string;
-  arkivename?: string;
 }) => {
-  const { username, arkivename } = params;
+  const { username } = params;
 
-  if (!username || !arkivename) {
+  if (!username) {
     return true;
   }
 
-  const { data: { user } } = await client.auth.getUser()
+  if (username) {
+    const { data: { user } } = await client.auth.getUser()
 
-  if (!user) {
-    return true;
+    if (!user) {
+      return true;
+    }
+
+    const userIdFromUsername = await getUserIdFromUsername(client, username);
+    return userIdFromUsername !== user.id;
   }
-
-  const userIdFromUsername = await getUserIdFromUsername(client, username);
-
-  return userIdFromUsername !== user.id;
 }
