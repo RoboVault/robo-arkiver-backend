@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any
 import { SupabaseClient } from "../_shared/deps.ts";
 import { Arkive } from "../_shared/types.ts";
 import { getEnv } from "../_shared/utils.ts";
@@ -9,6 +10,7 @@ type PostParams = Partial<
     pkg: File;
     isPublic: string;
     update: "major" | "minor";
+    manifest: any;
   }
 >;
 
@@ -16,7 +18,8 @@ export const post = async (
   supabase: SupabaseClient,
   params: PostParams,
 ) => {
-  const { userId, name, pkg, isPublic, update } = params;
+  const { userId, name, pkg, isPublic, update, manifest } = params;
+  const parsedManifest = JSON.parse(manifest);
   // check params
   if (!userId || !name || !pkg) {
     throw new HttpError(400, "Bad Request");
@@ -50,10 +53,18 @@ export const post = async (
         pkg,
         userId,
         update,
+        manifest: parsedManifest,
       },
     );
   } else {
-    return await createDeployment(supabase, userId, name, pkg, isPublic);
+    return await createDeployment(
+      supabase,
+      userId,
+      name,
+      pkg,
+      isPublic,
+      parsedManifest,
+    );
   }
 };
 
@@ -67,10 +78,11 @@ const updateDeployment = async (
     userId: string;
     pkg: File;
     update: "major" | "minor";
+    manifest: any;
   },
 ) => {
   // check params
-  const { userId, pkg, update } = params;
+  const { userId, pkg, update, manifest } = params;
   if (
     (update !== "major" && update !== "minor")
   ) {
@@ -127,6 +139,7 @@ const updateDeployment = async (
       minor_version: newVersion.minor_version,
       status: "pending",
       file_path: path,
+      manifest,
     })
     .select<"*", Arkive>("*");
 
@@ -143,6 +156,7 @@ const createDeployment = async (
   name: string,
   pkg: File,
   isPublic: string | undefined,
+  manifest: any,
 ) => {
   // insert new row to arkive table
   const insertArkiveRes = await supabase
@@ -180,6 +194,7 @@ const createDeployment = async (
       minor_version: 0,
       status: "pending",
       file_path: path,
+      manifest,
     });
 
   if (insertDeploymentRes.error) {

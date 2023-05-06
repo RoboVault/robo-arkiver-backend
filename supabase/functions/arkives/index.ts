@@ -27,7 +27,13 @@ async function handle(req: Request, supabase: SupabaseClient) {
       });
       const username = partialUrl.exec(url)?.pathname.groups.username;
 
-      const data = await get(supabase, { username: groups?.username ?? username, arkivename: groups?.arkivename });
+      const minimal = url.searchParams.get("minimal") === "true";
+
+      const data = await get(supabase, {
+        username: groups?.username ?? username,
+        arkivename: groups?.arkivename,
+        minimal,
+      });
       return data;
     }
     case "POST": {
@@ -108,7 +114,7 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     if (error instanceof HttpError || error.status) {
       return new Response(JSON.stringify({ error: error.message }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
