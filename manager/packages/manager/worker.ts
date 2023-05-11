@@ -1,7 +1,8 @@
 import { ArkiveMessageEvent } from '../manager/types.ts'
 import { arkiver, influx, log, path as denoPath } from '../../deps.ts'
+import { logger } from '../logger.ts'
 import { ArkiveInfluxLogger } from './logger.ts'
-import { getEnv } from '../utils.ts'
+import { createManifestHandlers, getEnv } from '../utils.ts'
 import { arkivesDir } from './manager.ts'
 
 declare const self: Worker
@@ -16,35 +17,40 @@ self.onmessage = async (e: MessageEvent<ArkiveMessageEvent>) => {
 				token: getEnv('INFLUX_TOKEN'),
 			}).getWriteApi(getEnv('INFLUX_ORG'), getEnv('INFLUX_BUCKET'))
 
-			log.setup({
+			const consoleHandler = new arkiver.ArkiveConsoleLogHandler('INFO', {
+				arkive: {
+					name: arkive.name,
+					id: arkive.id,
+					majorVersion: arkive.deployment.major_version,
+					minorVersion: arkive.deployment.minor_version,
+				},
+			})
+			const arkiverInfluxHandler = new ArkiveInfluxLogger('DEBUG', {
+				writer,
+				tags: {
+					source: 'arkive',
+					id: arkive.id.toString(),
+					majorVersion: arkive.deployment.major_version.toString(),
+					minorVersion: arkive.deployment.minor_version.toString(),
+				},
+			})
+			const baseLogConfig = {
 				handlers: {
-					console: new arkiver.ArkiveConsoleLogHandler('INFO', {
-						arkive: {
-							name: arkive.name,
-							id: arkive.id,
-							majorVersion: arkive.deployment.major_version,
-							minorVersion: arkive.deployment.minor_version,
-						},
-					}),
-					influx: new ArkiveInfluxLogger('DEBUG', {
-						writer,
-						tags: {
-							source: 'arkive',
-							name: arkive.name,
-							id: arkive.id.toString(),
-							majorVersion: arkive.deployment.major_version.toString(),
-							minorVersion: arkive.deployment.minor_version.toString(),
-						},
-					}),
+					console: consoleHandler,
+					arkiverInflux: arkiverInfluxHandler,
 				},
 				loggers: {
 					arkiver: {
 						level: 'DEBUG',
-						handlers: ['console', 'influx'],
+						handlers: ['console', 'arkiverInflux'],
 					},
 				},
-			})
-			arkiver.logger().info('initializing arkive', arkive)
+			} satisfies log.LogConfig
+
+			log.setup(baseLogConfig)
+
+			logger('arkiver').info('initializing arkive', arkive)
+
 			const manifestPath = new URL(
 				denoPath.join(
 					arkivesDir,
@@ -61,18 +67,38 @@ self.onmessage = async (e: MessageEvent<ArkiveMessageEvent>) => {
 				manifestDefault = md
 				manifestExport = me
 			} catch (e) {
-				arkiver.logger().error(
+				logger('arkiver').error(
 					`error importing manifest for ${arkive.id}: ${e.stack}`,
 				)
 				return
 			}
-			const manifest = manifestExport ?? manifestDefault
+			const manifest: arkiver.ArkiveManifest = manifestExport ?? manifestDefault
 			if (!manifest) {
-				arkiver.logger().error(
+				logger('arkiver').error(
 					`manifest not found for ${arkive.id} at ${manifestPath}`,
 				)
 				return
 			}
+
+			const { handlers, loggers } = createManifestHandlers(
+				arkive,
+				manifest,
+				writer,
+			)
+
+			const extendedLogConfig = {
+				handlers: {
+					...baseLogConfig.handlers,
+					...handlers,
+				},
+				loggers: {
+					...baseLogConfig.loggers,
+					...loggers,
+				},
+			} satisfies log.LogConfig
+
+			log.setup(extendedLogConfig)
+
 			const instance = new arkiver.Arkiver({
 				manifest,
 				mongoConnection,

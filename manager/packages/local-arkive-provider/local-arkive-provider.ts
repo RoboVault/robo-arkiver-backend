@@ -1,9 +1,10 @@
 import { serve } from 'https://deno.land/std@0.183.0/http/mod.ts'
 import { copy, emptyDir } from 'https://deno.land/std@0.183.0/fs/mod.ts'
 import { join } from 'https://deno.land/std@0.183.0/path/mod.ts'
-import { arkiver, arkiverTypes } from '../../deps.ts'
+import { arkiverTypes } from '../../deps.ts'
 import { ArkiveProvider } from '../providers/interfaces.ts'
 import { arkivesDir } from '../manager/manager.ts'
+import { logger } from '../logger.ts'
 
 export class LocalArkiveProvider implements ArkiveProvider {
 	newArkiveHandler?: (arkive: arkiverTypes.Arkive) => Promise<void>
@@ -19,7 +20,7 @@ export class LocalArkiveProvider implements ArkiveProvider {
 		serve(this.handleRequest, {
 			port: 42069,
 			onListen: ({ hostname, port }) => {
-				arkiver.logger().info(
+				logger('manager').info(
 					`[Local Arkive Provider] Running on ${hostname}:${port}`,
 				)
 			},
@@ -73,7 +74,7 @@ export class LocalArkiveProvider implements ArkiveProvider {
 				return new Response('No handler for new arkive', { status: 500 })
 			}
 
-			arkiver.logger().info(`[Local Arkive Provider] New arkive request`)
+			logger('manager').info(`[Local Arkive Provider] New arkive request`)
 
 			const arkiveData = await req.json() as {
 				name: string
