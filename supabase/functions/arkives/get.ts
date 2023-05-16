@@ -35,8 +35,7 @@ export async function get(
   const arkives = await sql`
     SELECT
       ${sql(columns)}
-			${
-    minimal ? sql`` : sql`, ARRAY_AGG(
+			${minimal ? sql`` : sql`, ARRAY_AGG(
 				json_build_object(
 					'deployment_id', d.id,
 					'deployment_created_at', d.created_at,
@@ -48,32 +47,29 @@ export async function get(
 					'manifest', d.manifest
 				)
 			) AS deployments`
-  }
+    }
     FROM
       public.arkive a
     JOIN
       public.user_profile up ON a.user_id = up.id
-    ${
-    minimal ? sql`` : sql`LEFT JOIN
+    ${minimal ? sql`` : sql`LEFT JOIN
       public.deployments d ON a.id = d.arkive_id`
-  }
-    ${
-    publicOnly
+    }
+    ${publicOnly
       ? username
         ? arkivename
           ? sql`WHERE a.public = true AND up.username = ${username} AND a.name = ${arkivename}`
           : sql`WHERE a.public = true AND up.username = ${username}`
         : sql`WHERE a.public = true`
       : username
-      ? arkivename
-        ? sql`WHERE up.username = ${username} AND a.name = ${arkivename}`
-        : sql`WHERE up.username = ${username}`
-      : sql`WHERE a.public = true` // return empty array
-  }
-    ${
-    minimal ? sql`` : sql`GROUP BY
+        ? arkivename
+          ? sql`WHERE up.username = ${username} AND a.name = ${arkivename}`
+          : sql`WHERE up.username = ${username}`
+        : sql`WHERE a.public = true` // return empty array
+    }
+    ${minimal ? sql`` : sql`GROUP BY
       a.id, up.username`
-  };
+    };
   `;
 
   if (username && arkivename && arkives.length === 0) {

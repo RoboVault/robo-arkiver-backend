@@ -1,4 +1,5 @@
 import { SupabaseClient } from "./deps.ts";
+import { HttpError } from "./http_error.ts";
 import { getEnv } from "./utils.ts";
 
 export const getUserIdFromUsername = async (
@@ -12,6 +13,9 @@ export const getUserIdFromUsername = async (
     .single();
 
   if (profileRes.error) {
+    if (profileRes.error.code === "PGRST116") {
+      throw new HttpError(404, `User ${username} not found`)
+    }
     throw profileRes.error;
   }
 
