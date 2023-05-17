@@ -39,7 +39,8 @@ if (import.meta.main) {
 		},
 	})
 	logger('manager').info('Starting Arkiver...')
-	const dev = Deno.env.get('DEV') !== undefined
-	const manager = new ArkiveManager({ dev })
+	const environment = Deno.env.get('ENVIRONMENT')
+	if (!environment) throw new Error('ENVIRONMENT not set')
+	const manager = new ArkiveManager({ environment })
 	await manager.init()
 }

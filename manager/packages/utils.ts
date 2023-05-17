@@ -39,7 +39,7 @@ export const collectRpcUrls = () => {
 	for (const chain of Object.keys(arkiver.supportedChains)) {
 		try {
 			rpcUrls[chain] = getEnv(`${chain.toUpperCase()}_RPC_URL`)
-		} catch (e) {}
+		} catch (e) { }
 	}
 	return rpcUrls
 }

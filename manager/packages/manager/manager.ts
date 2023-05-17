@@ -17,13 +17,14 @@ export class ArkiveManager {
 	private arkives: { arkive: arkiverTypes.Arkive; worker: Worker }[] = []
 	private rpcUrls: Record<string, string>
 
-	constructor(params: { dev: boolean }) {
+	constructor(params: { environment: string }) {
 		this.removeAllArkives = this.removeAllArkives.bind(this)
 		this.addNewArkive = this.addNewArkive.bind(this)
 
-		this.arkiveProvider = params.dev
+		const environment = params.environment.toLowerCase()
+		this.arkiveProvider = environment === "dev"
 			? new LocalArkiveProvider()
-			: new SupabaseProvider()
+			: new SupabaseProvider({ environment })
 		this.dataProvider = new MongoDataProvider()
 		this.graphQLServer = new GraphQLServer(this.arkiveProvider) // TODO implement GraphQL server
 		this.rpcUrls = collectRpcUrls()
@@ -151,7 +152,7 @@ export class ArkiveManager {
 						// check if previous version is an older major version
 						if (
 							previousVersion.arkive.deployment.major_version <
-								arkive.deployment.major_version
+							arkive.deployment.major_version
 						) {
 							logger('manager').info(
 								'removing old major version',
@@ -198,9 +199,9 @@ export class ArkiveManager {
 				a.arkive.id === arkive.id && // same id
 				(a.arkive.deployment.major_version < arkive.deployment.major_version || // older major version
 					(a.arkive.deployment.major_version === // same major version but older minor version
-							arkive.deployment.major_version &&
+						arkive.deployment.major_version &&
 						a.arkive.deployment.minor_version <
-							arkive.deployment.minor_version)),
+						arkive.deployment.minor_version)),
 		)
 	}
 

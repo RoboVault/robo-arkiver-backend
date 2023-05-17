@@ -1,12 +1,12 @@
 import { ArkiveProvider } from './interfaces.ts'
 import {
-	arkiver,
 	arkiverTypes,
 	path as denoPath,
 	supabase,
 } from '../../deps.ts'
 import { getEnv, getSupabaseClient, rm, unpack } from '../utils.ts'
 import { arkivesDir } from '../manager/manager.ts'
+import { logger } from '../logger.ts'
 
 interface RawArkive extends Omit<arkiverTypes.Arkive, 'deployment'> {
 	deployments: arkiverTypes.Deployment[]
@@ -16,15 +16,18 @@ export class SupabaseProvider implements ArkiveProvider {
 	private supabase: supabase.SupabaseClient
 	private newArkiveListener?: supabase.RealtimeChannel
 	private deletedArkiveListener?: supabase.RealtimeChannel
+	private environment: string
 
-	constructor() {
+	constructor(params: { environment: string }) {
 		this.supabase = getSupabaseClient()
+		this.environment = params.environment
 	}
 
 	public async getArkives(): Promise<arkiverTypes.Arkive[]> {
 		const arkivesRes = await this.supabase
 			.from(getEnv('SUPABASE_ARKIVE_TABLE'))
 			.select<'*, deployments(*)', RawArkive>('*, deployments(*)')
+			.eq('environment', this.environment)
 
 		if (arkivesRes.error) {
 			throw arkivesRes.error
@@ -82,19 +85,20 @@ export class SupabaseProvider implements ArkiveProvider {
 					)
 						.select<'*', Omit<arkiverTypes.Arkive, 'deployment'>>('*')
 						.eq('id', payload.new.arkive_id)
-						.single()
+						.eq('environment', this.environment)
 					if (e) {
 						const error = {
 							...e,
 							name: 'SupabaseProvider.listenNewArkive',
 						} satisfies Error
-						arkiver.logger().error(error, {
+						logger('manager').error(error, {
 							source: 'SupabaseProvider.listenNewArkive',
 						})
 						return
 					}
+					if (data.length === 0) return
 					const newArkive = {
-						...data,
+						...data[0],
 						deployment: payload.new,
 					}
 					await callback(newArkive)
@@ -189,6 +193,6 @@ export class SupabaseProvider implements ArkiveProvider {
 		if (this.deletedArkiveListener) {
 			this.deletedArkiveListener.unsubscribe()
 		}
-		arkiver.logger().info('closed')
+		logger('manager').info('closed')
 	}
 }

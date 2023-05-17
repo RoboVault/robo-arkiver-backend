@@ -11,6 +11,7 @@ type PostParams = Partial<
     isPublic: string;
     update: "major" | "minor";
     manifest: any;
+    env?: string;
   }
 >;
 
@@ -18,7 +19,7 @@ export const post = async (
   supabase: SupabaseClient,
   params: PostParams,
 ) => {
-  const { userId, name, pkg, isPublic, update, manifest } = params;
+  const { userId, name, pkg, isPublic, update, manifest, env } = params;
   const parsedManifest = JSON.parse(manifest);
   // check params
   if (!userId || !name || !pkg) {
@@ -29,12 +30,13 @@ export const post = async (
   const selectRes = await supabase
     .from(getEnv("ARKIVE_TABLE"))
     .select<
-      "id, deployments(major_version, minor_version)",
+      "id, env, deployments(major_version, minor_version)",
       {
         id: string;
+        env: string;
         deployments: { major_version: number; minor_version: number }[];
       }
-    >("id, deployments(major_version, minor_version)")
+    >("id, env, deployments(major_version, minor_version)")
     .eq("user_id", userId)
     .eq("name", name);
 
@@ -54,16 +56,20 @@ export const post = async (
         userId,
         update,
         manifest: parsedManifest,
+        env
       },
     );
   } else {
     return await createDeployment(
-      supabase,
-      userId,
-      name,
-      pkg,
-      isPublic,
-      parsedManifest,
+      {
+        supabase,
+        userId,
+        name,
+        pkg,
+        isPublic,
+        manifest: parsedManifest,
+        env
+      }
     );
   }
 };
@@ -73,16 +79,18 @@ const updateDeployment = async (
   arkive: {
     id: string;
     deployments: { major_version: number; minor_version: number }[];
+    env: string;
   },
   params: {
     userId: string;
     pkg: File;
     update: "major" | "minor";
     manifest: any;
+    env?: string;
   },
 ) => {
   // check params
-  const { userId, pkg, update, manifest } = params;
+  const { userId, pkg, update, manifest, env } = params;
   if (
     (update !== "major" && update !== "minor")
   ) {
@@ -147,17 +155,35 @@ const updateDeployment = async (
     throw insertRes.error;
   }
 
+  if (env && env !== arkive.env) {
+    const updateRes = await supabase
+      .from(getEnv("ARKIVE_TABLE"))
+      .update<{ env: string }>({
+        env,
+      })
+      .eq("id", arkive.id);
+
+    if (updateRes.error) {
+      throw updateRes.error;
+    }
+  }
+
   return insertRes.data;
 };
 
 const createDeployment = async (
-  supabase: SupabaseClient,
-  userId: string,
-  name: string,
-  pkg: File,
-  isPublic: string | undefined,
-  manifest: any,
+  params: {
+    supabase: SupabaseClient,
+    userId: string,
+    name: string,
+    pkg: File,
+    isPublic: string | undefined,
+    manifest: any,
+    env?: string
+  }
 ) => {
+  const { supabase, userId, name, pkg, isPublic, manifest, env } = params;
+
   // insert new row to arkive table
   const insertArkiveRes = await supabase
     .from(getEnv("ARKIVE_TABLE"))
@@ -165,6 +191,7 @@ const createDeployment = async (
       user_id: userId,
       name,
       public: isPublic !== undefined,
+      env: env ?? "staging",
     })
     .select<"id", { id: string }>("id");
 
