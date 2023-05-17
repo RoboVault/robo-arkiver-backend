@@ -10,6 +10,7 @@ supabase.
 1. Run `docker compose up -d`
 2. Go to `http://localhost:8086` in your browser to setup the influxdb instance
 3. Copy contents of `.env.sample` into a new `.env` file and fill in the details
-4. Run `main.ts` with `DEV` environment variable set.
-5. Run `arkiver deploy` and `arkiver delete` on your arkive with `DEV`
-   environment variable set.
+4. Run `main.ts` with `ENVIRONMENT` environment variable set to `DEV`.
+5. Run `arkiver deploy` with the `--env` flag set to `dev` to deploy an arkive
+   to the dev arkiver manager.
+6. Run `arkiver delete` with the `DEV` environment variable set.
