@@ -14,15 +14,17 @@ export class ArkiveManager {
 	private arkiveProvider: ArkiveProvider
 	private dataProvider: DataProvider
 	private graphQLServer: GraphQLServer
-	private arkives: { arkive: arkiverTypes.Arkive; worker: Worker }[] = []
+	private deployments: { arkive: arkiverTypes.Arkive; worker: Worker }[] = []
 	private rpcUrls: Record<string, string>
 
 	constructor(params: { environment: string }) {
-		this.removeAllArkives = this.removeAllArkives.bind(this)
-		this.addNewArkive = this.addNewArkive.bind(this)
+		this.removeAllDeployments = this.removeAllDeployments.bind(this)
+		this.addNewDeployment = this.addNewDeployment.bind(this)
+		this.getPreviousVersions = this.getPreviousVersions.bind(this)
+		this.removeArkive = this.removeArkive.bind(this)
 
 		const environment = params.environment.toLowerCase()
-		this.arkiveProvider = environment === "dev"
+		this.arkiveProvider = environment === 'dev'
 			? new LocalArkiveProvider()
 			: new SupabaseProvider({ environment })
 		this.dataProvider = new MongoDataProvider()
@@ -33,91 +35,110 @@ export class ArkiveManager {
 	public async init() {
 		try {
 			await this.graphQLServer.run()
-			const arkives = await this.arkiveProvider.getArkives()
-			this.listenNewArkives()
+			const deployments = await this.arkiveProvider.getDeployments()
+			this.listenNewDeployments()
 			this.listenForDeletedArkives()
-			await Promise.all(
-				arkives.map(async (arkive) => {
-					await this.addNewArkive(arkive)
-				}),
-			)
+			for (const deployment of deployments) {
+				await this.addNewDeployment(deployment)
+			}
 		} catch (e) {
 			logger('manager').error(e, { source: 'ArkiveManager.init' })
 		}
 	}
 
-	private listenNewArkives() {
-		this.arkiveProvider.listenNewArkive(async (arkive: arkiverTypes.Arkive) => {
-			logger('manager').info('new arkive', arkive)
-			// only remove previous versions if on the same major version.
-			// old major versions will be removed once the new version is synced
-			const previousArkives = this.getPreviousVersions(arkive)
-			const sameMajor = previousArkives.filter(
-				(a) =>
-					a.arkive.deployment.major_version === arkive.deployment.major_version,
-			)
-			// filter out old major versions
-			this.arkives = this.arkives.filter(
-				(a) =>
-					a.arkive.deployment.major_version !== arkive.deployment.major_version,
-			)
-			// remove old minor versions
-			await Promise.all(sameMajor.map(async (arkive) => {
-				await this.removeArkive(arkive)
-			}))
+	private listenNewDeployments() {
+		this.arkiveProvider.listenNewDeployment(
+			async (deployment: arkiverTypes.Arkive) => {
+				logger('manager').info('new arkive', deployment)
+				// only remove previous versions if on the same major version.
+				// old major versions will be removed once the new version is synced
+				const previousDeployments = this.getPreviousVersions(deployment)
+				const sameMajor = previousDeployments.filter(
+					(a) =>
+						a.arkive.deployment.major_version ===
+							deployment.deployment.major_version,
+				)
+				// remove old minor versions
+				for (const deployment of sameMajor) {
+					this.removeArkive(deployment, {
+						filter: true,
+						removeData: false,
+						updateStatus: true,
+					})
+				}
 
-			await this.addNewArkive(arkive)
-		})
+				await this.addNewDeployment(deployment)
+			},
+		)
 		logger('manager').info('listening for new arkives')
 	}
 
 	private listenForDeletedArkives() {
-		this.arkiveProvider.listenDeletedArkive(async ({ id }) => {
+		this.arkiveProvider.listenDeletedArkive(({ id }) => {
 			logger('manager').info('deleting arkives', id)
-			await this.removeAllArkives(id)
+			this.removeAllDeployments(id)
 			logger('manager').info('deleted arkives', id)
 		})
 		logger('manager').info('listening for deleted arkives')
 	}
 
-	private async addNewArkive(arkive: arkiverTypes.Arkive) {
+	private async addNewDeployment(arkive: arkiverTypes.Arkive) {
 		logger('manager').info('adding new arkive', arkive)
-		await this.arkiveProvider.pullArkive(arkive)
+		await this.arkiveProvider.pullDeployment(arkive)
 		const worker = this.spawnArkiverWorker(arkive)
 		await this.updateDeploymentStatus(arkive, 'syncing')
-		this.arkives.push({ arkive, worker })
+		this.deployments.push({ arkive, worker })
 		try {
-			await this.graphQLServer.addNewArkive(arkive)
+			await this.graphQLServer.addNewDeployment(arkive)
 		} catch (e) {
-			logger('manager').error(e, { source: 'ArkiveManager.addNewArkive' })
+			logger('manager').error(e, { source: 'ArkiveManager.addNewDeployment' })
 		}
 		logger('manager').info('added new arkive', arkive)
 	}
 
 	// this is called when an arkive is deleted by the user which means the record is no longer in the tables
-	private async removeAllArkives(id: number) {
+	private removeAllDeployments(id: number) {
 		logger('manager').info('removing arkives', id)
-		const deletedArkives = this.arkives.filter((a) => a.arkive.id === id)
-		await Promise.all(deletedArkives.map(async (arkive) => {
-			await this.removePackage(arkive.arkive)
-			arkive.worker.terminate()
-		}))
-		this.arkives = this.arkives.filter((a) => a.arkive.id !== id)
+		const deletedArkives = this.deployments.filter((a) => a.arkive.id === id)
+		deletedArkives.forEach((arkive) => {
+			this.removeArkive(arkive, {
+				updateStatus: false,
+				filter: false,
+				removeData: true,
+			})
+		})
+		this.deployments = this.deployments.filter((a) => a.arkive.id !== id)
 		logger('manager').info('removed arkives', id)
 	}
 
-	// this is called in two places: when a new minor version is added (listenNewArkives)
+	// this is called in two places: when a new minor version is added (listenNewDeployments)
 	// and when a new major version has fully synced (worker.onmessage)
-	private async removeArkive(
+	private removeArkive(
 		arkive: { arkive: arkiverTypes.Arkive; worker: Worker },
+		options: { updateStatus: boolean; filter: boolean; removeData: boolean },
 	) {
 		logger('manager').info('removing arkive', arkive)
-		await this.removePackage(arkive.arkive)
-		await this.updateDeploymentStatus(
-			arkive.arkive,
-			'retired',
-		)
+		this.removePackage(arkive.arkive).catch((e) => logger('manager').error(e))
+		if (options.updateStatus) {
+			this.updateDeploymentStatus(
+				arkive.arkive,
+				'retired',
+			).catch((e) => logger('manager').error(e))
+		}
 		arkive.worker.terminate()
+		if (options.filter) {
+			this.deployments = this.deployments.filter((a) =>
+				a.arkive.deployment.id !== arkive.arkive.deployment.id
+			)
+		}
+		if (options.removeData) {
+			this.graphQLServer.removeDeployment(arkive.arkive).catch((e) =>
+				logger('manager').error(e)
+			)
+			this.dataProvider.deleteArkiveData(arkive.arkive).catch((e) =>
+				logger('manager').error(e)
+			)
+		}
 	}
 
 	private spawnArkiverWorker(arkive: arkiverTypes.Arkive) {
@@ -146,24 +167,26 @@ export class ArkiveManager {
 					source: 'worker-arkive-' + e.data.data.arkive.id,
 				})
 			} else if (e.data.topic === 'synced') {
+				logger('manager').info(
+					`arkive synced: ${e.data.data.arkive.id}@${e.data.data.arkive.deployment.major_version}.${e.data.data.arkive.deployment.minor_version}`,
+				)
 				try {
 					const previousVersions = this.getPreviousVersions(e.data.data.arkive)
 					for (const previousVersion of previousVersions) {
 						// check if previous version is an older major version
 						if (
 							previousVersion.arkive.deployment.major_version <
-							arkive.deployment.major_version
+								arkive.deployment.major_version
 						) {
 							logger('manager').info(
 								'removing old major version',
 								previousVersion.arkive,
 							)
-							await this.removeArkive(previousVersion)
-							this.dataProvider.deleteArkiveData(previousVersion.arkive)
-							logger('manager').info(
-								'removed old major version',
-								previousVersion.arkive,
-							)
+							this.removeArkive(previousVersion, {
+								updateStatus: true,
+								filter: true,
+								removeData: true,
+							})
 						}
 					}
 					await this.updateDeploymentStatus(
@@ -194,14 +217,17 @@ export class ArkiveManager {
 	}
 
 	private getPreviousVersions(arkive: arkiverTypes.Arkive) {
-		return this.arkives.filter(
+		return this.deployments.filter(
 			(a) =>
-				a.arkive.id === arkive.id && // same id
-				(a.arkive.deployment.major_version < arkive.deployment.major_version || // older major version
+				a.arkive.id === arkive.id &&
+				(
+					(a.arkive.deployment.major_version <
+						arkive.deployment.major_version) ||
 					(a.arkive.deployment.major_version === // same major version but older minor version
-						arkive.deployment.major_version &&
+							arkive.deployment.major_version &&
 						a.arkive.deployment.minor_version <
-						arkive.deployment.minor_version)),
+							arkive.deployment.minor_version)
+				),
 		)
 	}
 
@@ -226,7 +252,7 @@ export class ArkiveManager {
 	}
 
 	public cleanup() {
-		this.arkives.forEach((arkive) => arkive.worker.terminate())
+		this.deployments.forEach((arkive) => arkive.worker.terminate())
 		this.arkiveProvider.close()
 	}
 }

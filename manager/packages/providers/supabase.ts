@@ -1,9 +1,5 @@
 import { ArkiveProvider } from './interfaces.ts'
-import {
-	arkiverTypes,
-	path as denoPath,
-	supabase,
-} from '../../deps.ts'
+import { arkiverTypes, path as denoPath, supabase } from '../../deps.ts'
 import { getEnv, getSupabaseClient, rm, unpack } from '../utils.ts'
 import { arkivesDir } from '../manager/manager.ts'
 import { logger } from '../logger.ts'
@@ -23,7 +19,7 @@ export class SupabaseProvider implements ArkiveProvider {
 		this.environment = params.environment
 	}
 
-	public async getArkives(): Promise<arkiverTypes.Arkive[]> {
+	public async getDeployments(): Promise<arkiverTypes.Arkive[]> {
 		const arkivesRes = await this.supabase
 			.from(getEnv('SUPABASE_ARKIVE_TABLE'))
 			.select<'*, deployments(*)', RawArkive>('*, deployments(*)')
@@ -67,7 +63,7 @@ export class SupabaseProvider implements ArkiveProvider {
 		return arkives
 	}
 
-	public listenNewArkive(
+	public listenNewDeployment(
 		callback: (arkive: arkiverTypes.Arkive) => Promise<void>,
 	): void {
 		const listener = this.supabase
@@ -110,7 +106,7 @@ export class SupabaseProvider implements ArkiveProvider {
 	}
 
 	public listenDeletedArkive(
-		callback: (arkiveId: { id: number }) => Promise<void>,
+		callback: (arkiveId: { id: number }) => void,
 	): void {
 		const listener = this.supabase
 			.channel('deleted-arkives')
@@ -121,8 +117,8 @@ export class SupabaseProvider implements ArkiveProvider {
 					schema: 'public',
 					table: getEnv('SUPABASE_ARKIVE_TABLE'),
 				},
-				async (payload) => {
-					await callback(payload.old as { id: number })
+				(payload) => {
+					callback(payload.old as { id: number })
 				},
 			)
 			.subscribe()
@@ -130,7 +126,7 @@ export class SupabaseProvider implements ArkiveProvider {
 		this.deletedArkiveListener = listener
 	}
 
-	public async pullArkive(arkive: arkiverTypes.Arkive): Promise<void> {
+	public async pullDeployment(arkive: arkiverTypes.Arkive): Promise<void> {
 		const path = `${arkive.user_id}/${arkive.id}`
 		const version =
 			`${arkive.deployment.major_version}_${arkive.deployment.minor_version}`

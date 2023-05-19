@@ -8,8 +8,9 @@ import { logger } from '../logger.ts'
 
 export class LocalArkiveProvider implements ArkiveProvider {
 	newArkiveHandler?: (arkive: arkiverTypes.Arkive) => Promise<void>
-	delArkiveHandler?: (arkiveId: { id: number }) => Promise<void>
+	delArkiveHandler?: (arkiveId: { id: number }) => void
 	currentId = 0
+	idToDeploymentId = new Map<number, number>()
 	nameToArkive = new Map<
 		string,
 		{ id: number; majorVersion: number; minorVersion: number; status: string }
@@ -84,14 +85,18 @@ export class LocalArkiveProvider implements ArkiveProvider {
 
 			let arkive = this.nameToArkive.get(arkiveData.name)
 
-			if (arkiveData.majorUpdate && arkive) {
-				arkive.minorVersion = 0
-				arkive.majorVersion++
-			} else if (arkive) {
-				arkive.minorVersion++
-			}
+			let deploymentId = 0
 
-			if (!arkive) {
+			if (arkive) {
+				if (arkiveData.majorUpdate) {
+					arkive.minorVersion = 0
+					arkive.majorVersion++
+				} else {
+					arkive.minorVersion++
+				}
+				deploymentId = (this.idToDeploymentId.get(arkive.id) ?? 0) + 1
+				this.idToDeploymentId.set(arkive.id, deploymentId)
+			} else {
 				arkive = {
 					id: this.currentId,
 					majorVersion: 1,
@@ -100,6 +105,7 @@ export class LocalArkiveProvider implements ArkiveProvider {
 				}
 				this.currentId++
 				this.nameToArkive.set(arkiveData.name, arkive)
+				this.idToDeploymentId.set(arkive.id, deploymentId)
 			}
 
 			const localDir = join(
@@ -121,7 +127,7 @@ export class LocalArkiveProvider implements ArkiveProvider {
 				user_id: 'dev',
 				deployment: {
 					arkive_id: arkive.id,
-					id: 0,
+					id: deploymentId,
 					created_at: new Date().toISOString(),
 					file_path: localDir,
 					major_version: arkive.majorVersion,
@@ -156,21 +162,21 @@ export class LocalArkiveProvider implements ArkiveProvider {
 		return new Response('Invalid request', { status: 400 })
 	}
 
-	getArkives(): Promise<arkiverTypes.Arkive[]> {
+	getDeployments(): Promise<arkiverTypes.Arkive[]> {
 		return Promise.resolve([])
 	}
-	listenNewArkive(
+	listenNewDeployment(
 		callback: (arkive: arkiverTypes.Arkive) => Promise<void>,
 	): void {
 		this.newArkiveHandler = callback
 	}
 	listenDeletedArkive(
-		callback: (arkiveId: { id: number }) => Promise<void>,
+		callback: (arkiveId: { id: number }) => void,
 	): void {
 		this.delArkiveHandler = callback
 	}
 
-	async pullArkive(_arkives: arkiverTypes.Arkive): Promise<void> {}
+	async pullDeployment(_arkives: arkiverTypes.Arkive): Promise<void> {}
 
 	// deno-lint-ignore require-await
 	async updateDeploymentStatus(

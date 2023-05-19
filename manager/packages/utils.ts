@@ -1,4 +1,11 @@
-import { arkiver, arkiverTypes, influx, log, supabase } from '../deps.ts'
+import {
+	arkiver,
+	arkiverTypes,
+	influx,
+	log,
+	logHandlers,
+	supabase,
+} from '../deps.ts'
 import { ArkiveInfluxLogger } from './manager/logger.ts'
 
 export const getEnv = (key: string, defaultValue?: string): string => {
@@ -39,7 +46,7 @@ export const collectRpcUrls = () => {
 	for (const chain of Object.keys(arkiver.supportedChains)) {
 		try {
 			rpcUrls[chain] = getEnv(`${chain.toUpperCase()}_RPC_URL`)
-		} catch (e) { }
+		} catch (e) {}
 	}
 	return rpcUrls
 }
@@ -49,7 +56,7 @@ export const createManifestHandlers = (
 	manifest: arkiverTypes.ArkiveManifest,
 	writer: influx.WriteApi,
 ) => {
-	let manifestHandlers: Record<string, ArkiveInfluxLogger> = {}
+	let manifestHandlers: Record<string, logHandlers.BaseHandler> = {}
 	let manifestLoggers: Record<string, log.LoggerConfig> = {}
 
 	for (const [name, dataSource] of Object.entries(manifest.dataSources)) {
@@ -95,7 +102,7 @@ export const createManifestHandlers = (
 const createContractHandlers = (
 	params: {
 		writer: influx.WriteApi
-		handlers: Record<string, ArkiveInfluxLogger>
+		handlers: Record<string, logHandlers.BaseHandler>
 		loggers: Record<string, log.LoggerConfig>
 		chain: string
 		dataSource: arkiverTypes.DataSource
@@ -118,8 +125,22 @@ const createContractHandlers = (
 					minorVersion: arkive.deployment.minor_version.toString(),
 				},
 			})
+			handlers[`console-${key}`] = new arkiver.ArkiveConsoleLogHandler(
+				'INFO',
+				{
+					arkive: {
+						name: arkive.name,
+						id: arkive.id,
+						majorVersion: arkive.deployment.major_version,
+						minorVersion: arkive.deployment.minor_version,
+					},
+					contract: contract.id,
+					chain,
+					event: event.name,
+				},
+			)
 			loggers[key] = {
-				handlers: [key, 'console'],
+				handlers: [key, `console-${key}`],
 				level: 'DEBUG',
 			}
 		}
@@ -131,7 +152,7 @@ const createContractHandlers = (
 const createBlockHandlers = (
 	params: {
 		writer: influx.WriteApi
-		handlers: Record<string, ArkiveInfluxLogger>
+		handlers: Record<string, logHandlers.BaseHandler>
 		loggers: Record<string, log.LoggerConfig>
 		chain: string
 		dataSource: arkiverTypes.DataSource
@@ -153,8 +174,18 @@ const createBlockHandlers = (
 				minorVersion: arkive.deployment.minor_version.toString(),
 			},
 		})
+		handlers[`console-${key}`] = new arkiver.ArkiveConsoleLogHandler('INFO', {
+			arkive: {
+				name: arkive.name,
+				id: arkive.id,
+				majorVersion: arkive.deployment.major_version,
+				minorVersion: arkive.deployment.minor_version,
+			},
+			chain,
+			blockHandler: blockHandler.name,
+		})
 		loggers[key] = {
-			handlers: [key, 'console'],
+			handlers: [key, `console-${key}`],
 			level: 'DEBUG',
 		}
 	}
@@ -165,7 +196,7 @@ const createBlockHandlers = (
 const createChainHandlers = (
 	params: {
 		writer: influx.WriteApi
-		handlers: Record<string, ArkiveInfluxLogger>
+		handlers: Record<string, logHandlers.BaseHandler>
 		loggers: Record<string, log.LoggerConfig>
 		chain: string
 		arkive: arkiverTypes.Arkive
@@ -183,8 +214,17 @@ const createChainHandlers = (
 			minorVersion: arkive.deployment.minor_version.toString(),
 		},
 	})
+	handlers[`console-${key}`] = new arkiver.ArkiveConsoleLogHandler('INFO', {
+		arkive: {
+			name: arkive.name,
+			id: arkive.id,
+			majorVersion: arkive.deployment.major_version,
+			minorVersion: arkive.deployment.minor_version,
+		},
+		chain,
+	})
 	loggers[key] = {
-		handlers: [key, 'console'],
+		handlers: [key, `console-${key}`],
 		level: 'DEBUG',
 	}
 

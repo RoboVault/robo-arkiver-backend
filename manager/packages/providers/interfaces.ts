@@ -7,14 +7,14 @@ export interface IndexedBlockHeightParams {
 }
 
 export interface ArkiveProvider {
-	getArkives(): Promise<arkiverTypes.Arkive[]>
-	listenNewArkive(
+	getDeployments(): Promise<arkiverTypes.Arkive[]>
+	listenNewDeployment(
 		callback: (arkive: arkiverTypes.Arkive) => Promise<void>,
 	): void
 	listenDeletedArkive(
-		callback: (arkiveId: { id: number }) => Promise<void>,
+		callback: (arkiveId: { id: number }) => void,
 	): void
-	pullArkive(arkives: arkiverTypes.Arkive): Promise<void>
+	pullDeployment(arkives: arkiverTypes.Arkive): Promise<void>
 	updateDeploymentStatus(
 		arkive: arkiverTypes.Arkive,
 		status: string,

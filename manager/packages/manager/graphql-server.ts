@@ -18,6 +18,7 @@ export class GraphQLServer {
 		// deno-lint-ignore ban-types
 		grapQLYoga.YogaServerInstance<{}, {}>
 	> = new Map()
+	private arkiveIdToHighestVersion: Map<number, number> = new Map()
 	arkiverProvider: ArkiveProvider
 
 	constructor(arkiveProvider: ArkiveProvider) {
@@ -39,13 +40,18 @@ export class GraphQLServer {
 		})
 	}
 
-	async addNewArkive(arkive: arkiverTypes.Arkive) {
+	async removeDeployment(arkive: arkiverTypes.Arkive) {
 		const username = await this.arkiverProvider.getUsername(arkive.user_id)
-		const path = `/${username}/${arkive.name}`
-		const pathWithVersion = `${path}/${arkive.deployment.major_version}`
+		const pathWithVersion =
+			`/${username}/${arkive.name}/${arkive.deployment.major_version}`
 		logger('graphQLServer').info(
-			`[GraphQL Server] Adding new arkive: ${pathWithVersion}, ${path}`,
+			`[GraphQL Server] Removing arkive: ${pathWithVersion}`,
 		)
+		this.pathToYoga.delete(pathWithVersion)
+	}
+
+	async addNewDeployment(arkive: arkiverTypes.Arkive) {
+		const username = await this.arkiverProvider.getUsername(arkive.user_id)
 		const manifestPath = new URL(
 			denoPath.join(
 				arkivesDir,
@@ -102,6 +108,12 @@ export class GraphQLServer {
 			landingPage: false,
 		}
 
+		const path = `/${username}/${arkive.name}`
+		const pathWithVersion = `${path}/${arkive.deployment.major_version}`
+		logger('graphQLServer').info(
+			`[GraphQL Server] Adding new arkive: ${pathWithVersion}`,
+		)
+
 		const yogaWithVersion = grapQLYoga.createYoga({
 			...options,
 			graphqlEndpoint: `${pathWithVersion}/graphql`,
@@ -112,7 +124,19 @@ export class GraphQLServer {
 		})
 
 		this.pathToYoga.set(`${pathWithVersion}/graphql`, yogaWithVersion)
-		this.pathToYoga.set(`${path}/graphql`, yoga)
+
+		const highestVersion = this.arkiveIdToHighestVersion.get(arkive.id)
+
+		if (!highestVersion || highestVersion < arkive.deployment.major_version) {
+			this.arkiveIdToHighestVersion.set(
+				arkive.id,
+				arkive.deployment.major_version,
+			)
+			this.pathToYoga.set(`${path}/graphql`, yoga)
+			logger('graphQLServer').info(
+				`[GraphQL Server] Updating highest version for ${path} to ${arkive.deployment.major_version}`,
+			)
+		}
 	}
 
 	async handleRequest(req: Request) {
