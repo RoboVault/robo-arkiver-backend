@@ -18,10 +18,10 @@ export class ArkiveManager {
 	private rpcUrls?: Record<string, string>
 	private options: { server: boolean; manager: boolean }
 
-	constructor(params: { 
-		environment: string, 
-		server: boolean, 
-		manager: boolean,
+	constructor(params: {
+		environment: string
+		server: boolean
+		manager: boolean
 	}) {
 		this.removeAllDeployments = this.removeAllDeployments.bind(this)
 		this.addNewDeployment = this.addNewDeployment.bind(this)
@@ -38,7 +38,7 @@ export class ArkiveManager {
 			this.dataProvider = new MongoDataProvider()
 			this.rpcUrls = collectRpcUrls()
 		}
-		if(this.options.server) {
+		if (this.options.server) {
 			this.graphQLServer = new GraphQLServer(this.arkiveProvider) // TODO implement GraphQL server
 		}
 	}
@@ -137,33 +137,33 @@ export class ArkiveManager {
 		options: { updateStatus: boolean; filter: boolean; removeData: boolean },
 	) {
 		logger('manager').info('removing arkive', arkive)
+		this.removePackage(arkive.arkive).catch((e) => logger('manager').error(e))
 
 		if (this.options.server) {
-			this.removePackage(arkive.arkive).catch((e) => logger('manager').error(e))
-			if (options.updateStatus) {
-				this.updateDeploymentStatus(
-					arkive.arkive,
-					'retired',
-				).catch((e) => logger('manager').error(e))
+			if (options.removeData) {
+				this.graphQLServer?.removeDeployment(arkive.arkive).catch((e) =>
+					logger('manager').error(e)
+				)
 			}
+		}
+
+		if (this.options.manager) {
 			arkive.worker.terminate()
 			if (options.filter) {
 				this.deployments = this.deployments.filter((a) =>
 					a.arkive.deployment.id !== arkive.arkive.deployment.id
 				)
 			}
-		}
-		
-		if (options.removeData) {
-			if (this.options.server) {
-				this.graphQLServer?.removeDeployment(arkive.arkive).catch((e) =>
-					logger('manager').error(e)
-				)
-			}
-			if (this.options.manager) {
+			if (options.removeData) {
 				this.dataProvider?.deleteArkiveData(arkive.arkive).catch((e) =>
 					logger('manager').error(e)
 				)
+			}
+			if (options.updateStatus) {
+				this.updateDeploymentStatus(
+					arkive.arkive,
+					'retired',
+				).catch((e) => logger('manager').error(e))
 			}
 		}
 	}
