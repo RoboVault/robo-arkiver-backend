@@ -5,7 +5,23 @@ import { ArkiveManager } from './packages/manager/manager.ts'
 import { ArkiveInfluxLogger } from './packages/manager/logger.ts'
 import { getEnv } from './packages/utils.ts'
 
+
 if (import.meta.main) {
+
+	const readOption = (option: string, defaultValue?: boolean) => {
+		const value = getEnv(option).toLowerCase()
+		if (!['true', 'false', '1', '0'].includes(value)) {
+			if (defaultValue)
+				return defaultValue
+			throw new Error(`Invalid option ${option}=${value}`)
+		}
+		if (value === 'true')
+			return true
+		if (value === 'false')
+			return false
+		return parseInt(value) > 0
+	}
+
 	const writer = new influx.InfluxDB({
 		url: getEnv('INFLUX_URL'),
 		token: getEnv('INFLUX_TOKEN'),
@@ -41,6 +57,10 @@ if (import.meta.main) {
 	logger('manager').info('Starting Arkiver...')
 	const environment = Deno.env.get('ENVIRONMENT')
 	if (!environment) throw new Error('ENVIRONMENT not set')
-	const manager = new ArkiveManager({ environment })
+	const manager = new ArkiveManager({ 
+		environment,
+		server: readOption('OPTIONS_GRAPHQL_SERVER', true),
+		manager: readOption('OPTIONS_ARKIVE_MANAGER', true),
+	})
 	await manager.init()
 }
