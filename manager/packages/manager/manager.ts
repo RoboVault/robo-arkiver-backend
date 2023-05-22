@@ -12,29 +12,42 @@ export const arkivesDir = '../../arkives'
 
 export class ArkiveManager {
 	private arkiveProvider: ArkiveProvider
-	private dataProvider: DataProvider
-	private graphQLServer: GraphQLServer
+	private dataProvider?: DataProvider
+	private graphQLServer?: GraphQLServer
 	private deployments: { arkive: arkiverTypes.Arkive; worker: Worker }[] = []
-	private rpcUrls: Record<string, string>
+	private rpcUrls?: Record<string, string>
+	private options: { server: boolean; manager: boolean }
 
-	constructor(params: { environment: string }) {
+	constructor(params: { 
+		environment: string, 
+		server: boolean, 
+		manager: boolean,
+	}) {
 		this.removeAllDeployments = this.removeAllDeployments.bind(this)
 		this.addNewDeployment = this.addNewDeployment.bind(this)
 		this.getPreviousVersions = this.getPreviousVersions.bind(this)
 		this.removeArkive = this.removeArkive.bind(this)
 
 		const environment = params.environment.toLowerCase()
+		this.options = params
 		this.arkiveProvider = environment === 'dev'
 			? new LocalArkiveProvider()
 			: new SupabaseProvider({ environment })
-		this.dataProvider = new MongoDataProvider()
-		this.graphQLServer = new GraphQLServer(this.arkiveProvider) // TODO implement GraphQL server
-		this.rpcUrls = collectRpcUrls()
+
+		if (this.options.manager) {
+			this.dataProvider = new MongoDataProvider()
+			this.rpcUrls = collectRpcUrls()
+		}
+		if(this.options.server) {
+			this.graphQLServer = new GraphQLServer(this.arkiveProvider) // TODO implement GraphQL server
+		}
 	}
 
 	public async init() {
 		try {
-			await this.graphQLServer.run()
+			if (this.options.server) {
+				await this.graphQLServer?.run()
+			}
 			const deployments = await this.arkiveProvider.getDeployments()
 			this.listenNewDeployments()
 			this.listenForDeletedArkives()
@@ -85,13 +98,19 @@ export class ArkiveManager {
 	private async addNewDeployment(arkive: arkiverTypes.Arkive) {
 		logger('manager').info('adding new arkive', arkive)
 		await this.arkiveProvider.pullDeployment(arkive)
-		const worker = this.spawnArkiverWorker(arkive)
-		await this.updateDeploymentStatus(arkive, 'syncing')
-		this.deployments.push({ arkive, worker })
-		try {
-			await this.graphQLServer.addNewDeployment(arkive)
-		} catch (e) {
-			logger('manager').error(e, { source: 'ArkiveManager.addNewDeployment' })
+
+		if (this.options.manager) {
+			const worker = this.spawnArkiverWorker(arkive)
+			await this.updateDeploymentStatus(arkive, 'syncing')
+			this.deployments.push({ arkive, worker })
+		}
+
+		if (this.options.server) {
+			try {
+				await this.graphQLServer?.addNewDeployment(arkive)
+			} catch (e) {
+				logger('manager').error(e, { source: 'ArkiveManager.addNewDeployment' })
+			}
 		}
 		logger('manager').info('added new arkive', arkive)
 	}
@@ -118,26 +137,34 @@ export class ArkiveManager {
 		options: { updateStatus: boolean; filter: boolean; removeData: boolean },
 	) {
 		logger('manager').info('removing arkive', arkive)
-		this.removePackage(arkive.arkive).catch((e) => logger('manager').error(e))
-		if (options.updateStatus) {
-			this.updateDeploymentStatus(
-				arkive.arkive,
-				'retired',
-			).catch((e) => logger('manager').error(e))
+
+		if (this.options.server) {
+			this.removePackage(arkive.arkive).catch((e) => logger('manager').error(e))
+			if (options.updateStatus) {
+				this.updateDeploymentStatus(
+					arkive.arkive,
+					'retired',
+				).catch((e) => logger('manager').error(e))
+			}
+			arkive.worker.terminate()
+			if (options.filter) {
+				this.deployments = this.deployments.filter((a) =>
+					a.arkive.deployment.id !== arkive.arkive.deployment.id
+				)
+			}
 		}
-		arkive.worker.terminate()
-		if (options.filter) {
-			this.deployments = this.deployments.filter((a) =>
-				a.arkive.deployment.id !== arkive.arkive.deployment.id
-			)
-		}
+		
 		if (options.removeData) {
-			this.graphQLServer.removeDeployment(arkive.arkive).catch((e) =>
-				logger('manager').error(e)
-			)
-			this.dataProvider.deleteArkiveData(arkive.arkive).catch((e) =>
-				logger('manager').error(e)
-			)
+			if (this.options.server) {
+				this.graphQLServer?.removeDeployment(arkive.arkive).catch((e) =>
+					logger('manager').error(e)
+				)
+			}
+			if (this.options.manager) {
+				this.dataProvider?.deleteArkiveData(arkive.arkive).catch((e) =>
+					logger('manager').error(e)
+				)
+			}
 		}
 	}
 
