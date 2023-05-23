@@ -6,11 +6,13 @@ import {
 	http,
 	mongoose,
 	path as denoPath,
+	redis,
 } from '../../deps.ts'
 import { logger } from '../logger.ts'
 import { ArkiveProvider } from '../providers/interfaces.ts'
 import { getEnv } from '../utils.ts'
 import { arkivesDir } from './manager.ts'
+import { RateLimiter, rateLimiter, RateLimitOptions } from './rate-limiter.ts'
 
 export class GraphQLServer {
 	private pathToYoga: Map<
@@ -20,9 +22,16 @@ export class GraphQLServer {
 	> = new Map()
 	private arkiveIdToHighestVersion: Map<number, number> = new Map()
 	arkiverProvider: ArkiveProvider
+	private redisClient?: redis.Redis
+	private rateLimiter?: RateLimiter
+	private rateLimitOptions?: RateLimitOptions
 
-	constructor(arkiveProvider: ArkiveProvider) {
+	constructor(
+		arkiveProvider: ArkiveProvider,
+		rateLimitOptions?: RateLimitOptions,
+	) {
 		this.arkiverProvider = arkiveProvider
+		this.rateLimitOptions = rateLimitOptions
 	}
 
 	async run() {
@@ -30,14 +39,26 @@ export class GraphQLServer {
 		await mongoose.connect(getEnv('MONGO_CONNECTION'))
 		logger('graphQLServer').info('[GraphQL Server] Connected to MongoDB')
 
-		http.serve(async (req) => await this.handleRequest(req), {
-			port: Number(getEnv('GRAPHQL_SERVER_PORT')),
-			onListen: () => {
-				logger('graphQLServer').info(
-					`[GraphQL Server] Running on port ${getEnv('GRAPHQL_SERVER_PORT')}`,
-				)
-			},
+		logger('graphQLServer').info('[GraphQL Server] Connecting to Redis')
+		this.redisClient = await redis.connect({
+			hostname: getEnv('REDIS_HOSTNAME'),
+			port: Number(getEnv('REDIS_PORT')),
 		})
+		logger('graphQLServer').info('[GraphQL Server] Connected to Redis')
+
+		this.rateLimiter = rateLimiter(this.redisClient, this.rateLimitOptions)
+
+		http.serve(
+			async (req, connInfo) => await this.handleRequest(req, connInfo),
+			{
+				port: Number(getEnv('GRAPHQL_SERVER_PORT')),
+				onListen: () => {
+					logger('graphQLServer').info(
+						`[GraphQL Server] Running on port ${getEnv('GRAPHQL_SERVER_PORT')}`,
+					)
+				},
+			},
+		)
 	}
 
 	async removeDeployment(arkive: arkiverTypes.Arkive) {
@@ -139,7 +160,18 @@ export class GraphQLServer {
 		}
 	}
 
-	async handleRequest(req: Request) {
+	async handleRequest(req: Request, connInfo: http.ConnInfo) {
+		if (!this.redisClient || !this.rateLimiter) {
+			logger('graphQLServer').error(
+				'[GraphQL Server] Redis client not initialized',
+			)
+			return new Response('Internal Server Error', { status: 500 })
+		}
+		const limited = await this.rateLimiter(req, connInfo)
+		if (limited) {
+			return new Response('Too Many Requests', { status: 429 })
+		}
+
 		const url = new URL(req.url)
 		const yoga = this.pathToYoga.get(url.pathname)
 		if (!yoga) {
