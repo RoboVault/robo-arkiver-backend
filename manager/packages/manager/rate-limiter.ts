@@ -14,7 +14,7 @@ export interface RateLimitOptions {
 export const rateLimiter = (
 	redis: redis.Redis,
 	params?: RateLimitOptions,
-) => {
+): RateLimiter => {
 	const defaultParams = { max: 100, window: 60 }
 	const { max, window } = { ...defaultParams, ...params }
 

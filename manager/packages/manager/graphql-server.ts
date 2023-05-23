@@ -169,7 +169,7 @@ export class GraphQLServer {
 		}
 		const limited = await this.rateLimiter(req, connInfo)
 		if (limited) {
-			return new Response('Too Many Requests', { status: 429 })
+			return limited
 		}
 
 		const url = new URL(req.url)
