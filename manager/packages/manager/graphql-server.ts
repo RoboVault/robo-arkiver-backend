@@ -6,13 +6,17 @@ import {
 	http,
 	mongoose,
 	path as denoPath,
-	redis,
 } from '../../deps.ts'
 import { logger } from '../logger.ts'
-import { ArkiveProvider } from '../providers/interfaces.ts'
+import { ArkiveProvider, CacheProvider } from '../providers/interfaces.ts'
+import { RedisProvider } from '../providers/redis.ts'
 import { getEnv } from '../utils.ts'
 import { arkivesDir } from './manager.ts'
-import { RateLimiter, rateLimiter, RateLimitOptions } from './rate-limiter.ts'
+import {
+	ShortRateLimiter,
+	shortRateLimiter,
+	ShortRateLimitOptions,
+} from './rate-limiter.ts'
 
 export class GraphQLServer {
 	private pathToYoga: Map<
@@ -22,31 +26,30 @@ export class GraphQLServer {
 	> = new Map()
 	private arkiveIdToHighestVersion: Map<number, number> = new Map()
 	arkiverProvider: ArkiveProvider
-	private redisClient?: redis.Redis
-	private rateLimiter?: RateLimiter
-	private rateLimitOptions?: RateLimitOptions
+	private cacheProvider: CacheProvider
+	private shortRateLimiter: ShortRateLimiter
+	private rateLimitOptions?: ShortRateLimitOptions
 
 	constructor(
 		arkiveProvider: ArkiveProvider,
-		rateLimitOptions?: RateLimitOptions,
+		rateLimitOptions?: ShortRateLimitOptions,
 	) {
 		this.arkiverProvider = arkiveProvider
 		this.rateLimitOptions = rateLimitOptions
+		this.cacheProvider = new RedisProvider({
+			hostname: getEnv('REDIS_HOSTNAME'),
+			port: Number(getEnv('REDIS_PORT')),
+		})
+		this.shortRateLimiter = shortRateLimiter(
+			this.cacheProvider,
+			this.rateLimitOptions,
+		)
 	}
 
 	async run() {
 		logger('graphQLServer').info('[GraphQL Server] Connecting to MongoDB')
 		await mongoose.connect(getEnv('MONGO_CONNECTION'))
 		logger('graphQLServer').info('[GraphQL Server] Connected to MongoDB')
-
-		logger('graphQLServer').info('[GraphQL Server] Connecting to Redis')
-		this.redisClient = await redis.connect({
-			hostname: getEnv('REDIS_HOSTNAME'),
-			port: Number(getEnv('REDIS_PORT')),
-		})
-		logger('graphQLServer').info('[GraphQL Server] Connected to Redis')
-
-		this.rateLimiter = rateLimiter(this.redisClient, this.rateLimitOptions)
 
 		http.serve(
 			async (req, connInfo) => await this.handleRequest(req, connInfo),
@@ -161,13 +164,7 @@ export class GraphQLServer {
 	}
 
 	async handleRequest(req: Request, connInfo: http.ConnInfo) {
-		if (!this.redisClient || !this.rateLimiter) {
-			logger('graphQLServer').error(
-				'[GraphQL Server] Redis client not initialized',
-			)
-			return new Response('Internal Server Error', { status: 500 })
-		}
-		const limited = await this.rateLimiter(req, connInfo)
+		const limited = await this.shortRateLimiter(req, connInfo)
 		if (limited) {
 			return limited
 		}

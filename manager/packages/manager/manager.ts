@@ -39,7 +39,10 @@ export class ArkiveManager {
 			this.rpcUrls = collectRpcUrls()
 		}
 		if (this.options.server) {
-			this.graphQLServer = new GraphQLServer(this.arkiveProvider) // TODO implement GraphQL server
+			this.graphQLServer = new GraphQLServer(this.arkiveProvider, {
+				max: 10,
+				window: 1,
+			})
 		}
 	}
 
@@ -173,6 +176,8 @@ export class ArkiveManager {
 			new URL('./worker.ts', import.meta.url),
 			{
 				type: 'module',
+				name:
+					`${arkive.id}@${arkive.deployment.major_version}.${arkive.deployment.minor_version}`,
 				deno: {
 					permissions: {
 						env: true,
@@ -231,6 +236,7 @@ export class ArkiveManager {
 			logger('manager').error(e.error, {
 				source: 'worker-arkive-' + arkive.id,
 			})
+			e.preventDefault()
 		}
 		worker.postMessage({
 			topic: 'initArkive',

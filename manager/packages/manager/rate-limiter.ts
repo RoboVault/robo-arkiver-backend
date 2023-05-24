@@ -1,22 +1,25 @@
-import { assertEquals } from 'https://deno.land/std@0.188.0/testing/asserts.ts'
-import { http, redis } from '../../deps.ts'
-
-export type RateLimiter = (
+import { http } from '../../deps.ts'
+import { CacheProvider } from '../providers/interfaces.ts'
+export type ShortRateLimiter = (
 	req: Request,
 	connInfo: http.ConnInfo,
 ) => Promise<Response | void>
 
-export interface RateLimitOptions {
+export interface ShortRateLimitOptions {
 	max?: number
 	window?: number
 }
 
-export const rateLimiter = (
-	redis: redis.Redis,
-	params?: RateLimitOptions,
-): RateLimiter => {
-	const defaultParams = { max: 100, window: 60 }
-	const { max, window } = { ...defaultParams, ...params }
+export interface MonthlyRateLimitParams {
+	arkiveId: number
+}
+
+export const shortRateLimiter = (
+	cache: CacheProvider,
+	options?: ShortRateLimitOptions,
+): ShortRateLimiter => {
+	const defaultOptions = { max: 100, window: 60 }
+	const { max, window } = { ...defaultOptions, ...options }
 
 	return async (req: Request, connInfo: http.ConnInfo) => {
 		const ip = (connInfo.remoteAddr as Deno.NetAddr).hostname ??
@@ -24,9 +27,9 @@ export const rateLimiter = (
 		if (!ip) return new Response('Bad Request', { status: 400 })
 
 		const key = `rate-limiter:${ip}`
-		const current = await redis.get(key)
+		const current = await cache.get(key)
 		if (!current) {
-			await redis.set(key, 1, { ex: window })
+			await cache.set(key, 1, { ex: window })
 			return
 		}
 
@@ -35,42 +38,6 @@ export const rateLimiter = (
 			return new Response('Too Many Requests', { status: 429 })
 		}
 
-		await redis.incr(key)
+		await cache.incr(key)
 	}
 }
-
-Deno.test('rateLimiter', async () => {
-	const redisClient = await redis.connect({
-		hostname: 'localhost',
-		port: 6379,
-	})
-
-	await redisClient.flushdb()
-
-	const limiter = rateLimiter(redisClient)
-
-	const req = new Request('http://localhost:8080')
-	const connInfo = {
-		remoteAddr: {
-			hostname: '127.0.0.1',
-			transport: 'tcp',
-			port: 8080,
-		},
-		localAddr: {
-			hostname: '127.0.0.1',
-			transport: 'tcp',
-			port: 8080,
-		},
-	} satisfies http.ConnInfo
-
-	for (let i = 0; i < 100; i++) {
-		const res = await limiter(req, connInfo)
-		assertEquals(res, undefined)
-	}
-
-	const res = await limiter(req, connInfo)
-	await res?.arrayBuffer()
-	assertEquals(res?.status, 429)
-
-	redisClient.close()
-})

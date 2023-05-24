@@ -26,3 +26,15 @@ export interface ArkiveProvider {
 export interface DataProvider {
 	deleteArkiveData(arkive: arkiverTypes.Arkive): Promise<void>
 }
+
+export interface CacheProvider {
+	set(
+		key: string,
+		value: unknown,
+		options?: Record<string, unknown>,
+	): Promise<void>
+	get(key: string): Promise<string | undefined | null>
+	incr(key: string): Promise<number | undefined>
+	flush(): Promise<void>
+	close(): void
+}
