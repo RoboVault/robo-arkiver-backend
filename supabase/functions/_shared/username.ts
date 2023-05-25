@@ -1,23 +1,43 @@
-import { SupabaseClient } from "./deps.ts";
-import { HttpError } from "./http_error.ts";
-import { getEnv } from "./utils.ts";
+import { SUPABASE_TABLES } from '../../../manager/packages/constants.ts'
+import { SupabaseClient } from './deps.ts'
+import { HttpError } from './http_error.ts'
 
 export const getUserIdFromUsername = async (
-  supabase: SupabaseClient,
-  username: string,
+	supabase: SupabaseClient,
+	username: string,
 ) => {
-  const profileRes = await supabase
-    .from(getEnv("PROFILE_TABLE"))
-    .select<"id", { id: string }>("id")
-    .eq("username", username)
-    .single();
+	const profileRes = await supabase
+		.from(SUPABASE_TABLES.USER_PROFILE)
+		.select<'id', { id: string }>('id')
+		.eq('username', username)
+		.single()
 
-  if (profileRes.error) {
-    if (profileRes.error.code === "PGRST116") {
-      throw new HttpError(404, `User ${username} not found`)
-    }
-    throw profileRes.error;
-  }
+	if (profileRes.error) {
+		if (profileRes.error.code === 'PGRST116') {
+			throw new HttpError(404, `User ${username} not found`)
+		}
+		throw profileRes.error
+	}
 
-  return profileRes.data.id;
-};
+	return profileRes.data.id
+}
+
+export const getUsernameFromUserId = async (
+	supabase: SupabaseClient,
+	userId: string,
+) => {
+	const profileRes = await supabase
+		.from(SUPABASE_TABLES.USER_PROFILE)
+		.select<'username', { username: string }>('username')
+		.eq('id', userId)
+		.single()
+
+	if (profileRes.error) {
+		if (profileRes.error.code === 'PGRST116') {
+			throw new HttpError(404, `User ${userId} not found`)
+		}
+		throw profileRes.error
+	}
+
+	return profileRes.data.username
+}

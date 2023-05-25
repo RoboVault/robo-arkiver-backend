@@ -39,10 +39,7 @@ export class ArkiveManager {
 			this.rpcUrls = collectRpcUrls()
 		}
 		if (this.options.server) {
-			this.graphQLServer = new GraphQLServer(this.arkiveProvider, {
-				max: 10,
-				window: 1,
-			})
+			this.graphQLServer = new GraphQLServer(this.arkiveProvider)
 		}
 	}
 

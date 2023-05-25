@@ -1,129 +1,152 @@
-import { serve } from "https://deno.land/std@0.131.0/http/server.ts";
-import { createClient, SupabaseClient } from "../_shared/deps.ts";
-import { getEnv } from "../_shared/utils.ts";
-import { HttpError } from "../_shared/http_error.ts";
-import { get } from "./get.ts";
-import { post } from "./post.ts";
-import { patch } from "./patch.ts";
-import { del } from "./delete.ts";
+import {
+	Context,
+	cors,
+	createClient,
+	Hono,
+	serve,
+	validator,
+} from '../_shared/deps.ts'
+import { getEnv } from '../_shared/utils.ts'
+import { del } from './delete.ts'
+import { get } from './get.ts'
+import { patch, patchSchema } from './patch.ts'
+import { post, postSchema } from './post.ts'
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "Content-type,Accept,X-Custom-Header,Authorization",
-};
+const app = new Hono()
 
-async function handle(req: Request, supabase: SupabaseClient) {
-  const url = new URL(req.url);
-  switch (req.method) {
-    case "GET": {
-      const fullUrl = new URLPattern({
-        pathname: "/arkives/:username/:arkivename",
-      });
-      const groups = fullUrl.exec(url)?.pathname.groups;
+app
+	.use(
+		'*',
+		cors({
+			origin: '*',
+			allowHeaders: [
+				'Content-type',
+				'Accept',
+				'X-Custom-Header',
+				'Authorization',
+			],
+		}),
+	)
+	.get('/arkives/:username/:arkivename', async (c) => {
+		const { arkivename, username } = c.req.param()
+		const minimal = c.req.query('minimal') === 'true'
+		const supabase = getSupabaseClient(c)
 
-      const partialUrl = new URLPattern({
-        pathname: "/arkives/:username",
-      });
-      const username = partialUrl.exec(url)?.pathname.groups.username;
+		const data = await get(supabase, {
+			username,
+			arkivename,
+			minimal,
+			publicOnly: false,
+		})
 
-      const minimal = url.searchParams.get("minimal") === "true";
+		return c.json(data)
+	})
+	.get('/arkives/:username', async (c) => {
+		const username = c.req.param('username')
+		const minimal = c.req.query('minimal') === 'true'
+		const publicOnly = c.req.query('publicOnly') === 'true'
+		const supabase = getSupabaseClient(c)
 
-      const data = await get(supabase, {
-        username: groups?.username ?? username,
-        arkivename: groups?.arkivename,
-        minimal,
-      });
-      return data;
-    }
-    case "POST": {
-      const formData = await req.formData();
-      const params = Object.fromEntries(formData.entries());
-      const userIdRes = await supabase.auth.getUser();
-      if (userIdRes.error) {
-        throw userIdRes.error;
-      }
-      params.userId = userIdRes.data.user.id;
-      const data = await post(supabase, params);
-      return data;
-    }
-    case "PATCH": {
-      const urlPattern = new URLPattern({
-        pathname: "/arkives/:id",
-      });
+		const data = await get(supabase, {
+			username,
+			minimal,
+			publicOnly,
+		})
 
-      if (!urlPattern.test(url)) throw new HttpError(400, "Bad Request");
-      const id = urlPattern.exec(url)!.pathname.groups.id!;
+		return c.json(data)
+	})
+	.get('/arkives', async (c) => {
+		const minimal = c.req.query('minimal') === 'true'
+		const publicOnly = c.req.query('publicOnly') === 'true'
+		const supabase = getSupabaseClient(c)
 
-      const formData = await req.formData();
-      const params = Object.fromEntries(formData.entries());
+		const data = await get(supabase, {
+			minimal,
+			publicOnly,
+		})
 
-      const data = await patch(supabase, { id, ...params });
-      return data;
-    }
-    case "DELETE": {
-      const urlPattern = new URLPattern({
-        pathname: "/arkives/:arkiveName",
-      });
-      if (!urlPattern.test(url)) throw new HttpError(400, "Bad Request");
-      const matcher = urlPattern.exec(url);
-      const arkiveName = matcher!.pathname.groups.arkiveName!;
+		return c.json(data)
+	})
+	.post(
+		'/arkives',
+		validator(
+			'form',
+			(value, c) => {
+				const parsed = postSchema.safeParse(value)
+				if (!parsed.success) return c.json(parsed.error.format(), 400)
+				return parsed.data
+			},
+		),
+		async (c) => {
+			const formData = c.req.valid('form')
+			const supabase = getSupabaseClient(c)
 
-      const userIdRes = await supabase.auth.getUser();
-      if (userIdRes.error) {
-        throw userIdRes.error;
-      }
-      const userId = userIdRes.data.user.id;
+			const userIdRes = await supabase.auth.getUser()
+			if (userIdRes.error) {
+				return c.text('Unauthorized', 401)
+			}
 
-      const data = await del(supabase, { arkiveName, userId });
-      return data;
-    }
-    default:
-      throw new Error(`Method ${req.method} not supported`);
-  }
+			const data = await post(supabase, {
+				...formData,
+				userId: userIdRes.data.user.id,
+			})
+			return c.json(data)
+		},
+	)
+	.patch(
+		'/arkives/:arkivename',
+		validator('form', (value, c) => {
+			const parsed = patchSchema.safeParse(value)
+			if (!parsed.success) return c.json(parsed.error.format(), 400)
+			return parsed.data
+		}),
+		async (c) => {
+			const arkivename = c.req.param('arkivename')
+			const formData = c.req.valid('form')
+			const supabase = getSupabaseClient(c)
+
+			const userIdRes = await supabase.auth.getUser()
+			if (userIdRes.error) {
+				return c.text('Unauthorized', 401)
+			}
+
+			const data = await patch(supabase, {
+				...formData,
+				arkivename,
+				userId: userIdRes.data.user.id,
+			})
+			return c.json(data)
+		},
+	)
+	.delete('/arkives/:arkivename', async (c) => {
+		const arkivename = c.req.param('arkivename')
+		const supabase = getSupabaseClient(c)
+
+		const userIdRes = await supabase.auth.getUser()
+		if (userIdRes.error) {
+			return c.text('Unauthorized', 401)
+		}
+
+		const data = await del(supabase, {
+			arkivename,
+			userId: userIdRes.data.user.id,
+		})
+		return c.json(data)
+	})
+	.options('*', (c) => {
+		return c.text('ok')
+	})
+
+serve(app.fetch)
+
+const getSupabaseClient = (c: Context) => {
+	const supabaseUrl = getEnv('SUPABASE_URL')
+	const supabaseKey = getEnv('SUPABASE_ANON_KEY')
+	const token = c.req.headers.get('Authorization') ??
+		`Bearer ${getEnv('SUPABASE_ANON_KEY')}`
+	const supabase = createClient(supabaseUrl, supabaseKey, {
+		global: { headers: { Authorization: token } },
+	})
+
+	return supabase
 }
-
-serve(async (req) => {
-  // This is needed if you're planning to invoke your function from a browser.
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
-
-  try {
-    const supabaseUrl = getEnv("SUPABASE_URL");
-    const supabaseAnonKey = getEnv("SUPABASE_ANON_KEY");
-    const token = req.headers.get("Authorization") ??
-      `Bearer ${supabaseAnonKey}`;
-    const supabase = createClient(
-      supabaseUrl,
-      supabaseAnonKey,
-      {
-        global: {
-          headers: { Authorization: token },
-        },
-      },
-    );
-
-    const data = await handle(
-      req,
-      supabase,
-    );
-
-    return new Response(JSON.stringify(data), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
-  } catch (error) {
-    console.log(error);
-    if (error instanceof HttpError || error.status) {
-      return new Response(JSON.stringify({ error: error.message }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: error.status,
-      });
-    }
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
-  }
-});

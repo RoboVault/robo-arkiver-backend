@@ -20,21 +20,16 @@ export interface ArkiveProvider {
 		status: string,
 	): Promise<void>
 	getUsername(userId: string): Promise<string>
+	getLimits(username: string): Promise<ApiLimits | null>
 	close(): void
+}
+
+export type ApiLimits = {
+	max: number
+	count: number
+	dayTimestamp: number
 }
 
 export interface DataProvider {
 	deleteArkiveData(arkive: arkiverTypes.Arkive): Promise<void>
-}
-
-export interface CacheProvider {
-	set(
-		key: string,
-		value: unknown,
-		options?: Record<string, unknown>,
-	): Promise<void>
-	get(key: string): Promise<string | undefined | null>
-	incr(key: string): Promise<number | undefined>
-	flush(): Promise<void>
-	close(): void
 }

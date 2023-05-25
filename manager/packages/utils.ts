@@ -31,12 +31,11 @@ export const getSupabaseClient = () => {
 }
 
 export const unpack = async (path: string, target: string) => {
-	const p = Deno.run({
-		cmd: ['tar', 'xzf', path, '-C', target],
+	const command = new Deno.Command(Deno.execPath(), {
+		args: ['tar', 'xzf', path, '-C', target],
 	})
-	const status = await p.status()
-	p.close()
-	if (!status.success) {
+	const { success } = await command.output()
+	if (success) {
 		throw new Error(`Failed to unpack ${path}`)
 	}
 }
@@ -44,9 +43,9 @@ export const unpack = async (path: string, target: string) => {
 export const collectRpcUrls = () => {
 	const rpcUrls: Record<string, string> = {}
 	for (const chain of Object.keys(arkiver.supportedChains)) {
-		try {
-			rpcUrls[chain] = getEnv(`${chain.toUpperCase()}_RPC_URL`)
-		} catch (e) {}
+		const rpcUrl = Deno.env.get(`${chain.toUpperCase()}_RPC_URL`)
+		if (!rpcUrl) continue
+		rpcUrls[chain] = rpcUrl
 	}
 	return rpcUrls
 }
@@ -229,4 +228,16 @@ const createChainHandlers = (
 	}
 
 	return { handlers, loggers }
+}
+
+export const buildObjectFromArray = (values: string[]) => {
+	const res = values.reduce((acc, value, i) => {
+		if (i % 2 === 0) {
+			acc[1] = value
+		} else {
+			acc[0][acc[1]] = value
+		}
+		return acc
+	}, [{}, ''] as [Record<string, string>, string])
+	return res[0]
 }

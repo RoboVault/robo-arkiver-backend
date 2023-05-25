@@ -1,8 +1,9 @@
-import { ArkiveProvider } from './interfaces.ts'
+import { ApiLimits, ArkiveProvider } from './interfaces.ts'
 import { arkiverTypes, path as denoPath, supabase } from '../../deps.ts'
-import { getEnv, getSupabaseClient, rm, unpack } from '../utils.ts'
+import { getSupabaseClient, rm, unpack } from '../utils.ts'
 import { arkivesDir } from '../manager/manager.ts'
 import { logger } from '../logger.ts'
+import { SUPABASE_TABLES } from '../constants.ts'
 
 interface RawArkive extends Omit<arkiverTypes.Arkive, 'deployment'> {
 	deployments: arkiverTypes.Deployment[]
@@ -21,7 +22,7 @@ export class SupabaseProvider implements ArkiveProvider {
 
 	public async getDeployments(): Promise<arkiverTypes.Arkive[]> {
 		const arkivesRes = await this.supabase
-			.from(getEnv('SUPABASE_ARKIVE_TABLE'))
+			.from(SUPABASE_TABLES.ARKIVE)
 			.select<'*, deployments(*)', RawArkive>('*, deployments(*)')
 			.eq('environment', this.environment)
 
@@ -73,11 +74,11 @@ export class SupabaseProvider implements ArkiveProvider {
 				{
 					event: 'INSERT',
 					schema: 'public',
-					table: getEnv('SUPABASE_DEPLOYMENTS_TABLE'),
+					table: SUPABASE_TABLES.DEPLOYMENTS,
 				},
 				async (payload) => {
 					const { data, error: e } = await this.supabase.from(
-						getEnv('SUPABASE_ARKIVE_TABLE'),
+						SUPABASE_TABLES.ARKIVE,
 					)
 						.select<'*', Omit<arkiverTypes.Arkive, 'deployment'>>('*')
 						.eq('id', payload.new.arkive_id)
@@ -115,7 +116,7 @@ export class SupabaseProvider implements ArkiveProvider {
 				{
 					event: 'DELETE',
 					schema: 'public',
-					table: getEnv('SUPABASE_ARKIVE_TABLE'),
+					table: SUPABASE_TABLES.ARKIVE,
 				},
 				(payload) => {
 					callback(payload.old as { id: number })
@@ -132,7 +133,7 @@ export class SupabaseProvider implements ArkiveProvider {
 			`${arkive.deployment.major_version}_${arkive.deployment.minor_version}`
 
 		const { data, error } = await this.supabase.storage
-			.from(getEnv('SUPABASE_ARKIVE_STORAGE'))
+			.from(SUPABASE_TABLES.PACKAGES)
 			.download(
 				`${path}/${version}.tar.gz`,
 			)
@@ -160,7 +161,7 @@ export class SupabaseProvider implements ArkiveProvider {
 		status: string,
 	): Promise<void> {
 		const { error } = await this.supabase
-			.from(getEnv('SUPABASE_DEPLOYMENTS_TABLE'))
+			.from(SUPABASE_TABLES.DEPLOYMENTS)
 			.update({ status })
 			.eq('arkive_id', arkive.id)
 			.eq('major_version', arkive.deployment.major_version)
@@ -172,7 +173,7 @@ export class SupabaseProvider implements ArkiveProvider {
 
 	public async getUsername(userId: string) {
 		const { data, error } = await this.supabase
-			.from(getEnv('SUPABASE_PROFILE_TABLE'))
+			.from(SUPABASE_TABLES.USER_PROFILE)
 			.select('username')
 			.eq('id', userId)
 			.single()
@@ -180,6 +181,29 @@ export class SupabaseProvider implements ArkiveProvider {
 			throw error
 		}
 		return data.username
+	}
+
+	public async getLimits(username: string): Promise<ApiLimits | null> {
+		const { data, error } = await this.supabase
+			.from(SUPABASE_TABLES.TIER_INFO)
+			.select(`d_gql_max_count, ${SUPABASE_TABLES.USER_PROFILE}(username)`)
+			.eq(`${SUPABASE_TABLES.USER_PROFILE}.username`, username)
+
+		if (error) {
+			throw error
+		}
+
+		if (data.length === 0) {
+			return null
+		}
+
+		const { d_gql_max_count } = data[0]
+
+		return {
+			count: 1,
+			max: d_gql_max_count,
+			dayTimestamp: Date.now(),
+		}
 	}
 
 	public close(): void {
