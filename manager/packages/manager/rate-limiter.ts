@@ -1,6 +1,6 @@
 import { http, redis } from '../../deps.ts'
 import { ERROR_CODES, REDIS_KEYS } from '../constants.ts'
-import { ApiLimits, ArkiveProvider } from '../providers/interfaces.ts'
+import { ArkiveProvider } from '../providers/interfaces.ts'
 import { buildObjectFromArray } from '../utils.ts'
 export type RateLimiter = (
 	req: Request,
@@ -62,7 +62,7 @@ export const apiKeyLimiter = async (
 	if (validApiKey === 0) {
 		return new Response('Unauthorized', { status: 401 })
 	}
-	if (!limits) {
+	if (!limits || (limits && (limits as string[]).length === 0)) {
 		const arkiveLimits = await arkiveProvider.getLimits(username)
 		if (!arkiveLimits) {
 			return new Response('Username Not Found', { status: 404 })
@@ -73,7 +73,7 @@ export const apiKeyLimiter = async (
 
 	const { count, dayTimestamp, max } = buildObjectFromArray(
 		limits as string[],
-	) as Partial<ApiLimits>
+	)
 	if (!count || !dayTimestamp || !max) {
 		return new Response(
 			`Internal Server Error: ${ERROR_CODES.INVALID_API_LIMITS}`,
@@ -82,7 +82,7 @@ export const apiKeyLimiter = async (
 	}
 
 	const now = Date.now()
-	if (now - dayTimestamp > 86_400_000) {
+	if (now - parseInt(dayTimestamp) > 86_400_000) {
 		await redis.hset(`${REDIS_KEYS.LIMITS}:${username}`, {
 			count: 1,
 			dayTimestamp: now,
@@ -90,7 +90,7 @@ export const apiKeyLimiter = async (
 		return null
 	}
 
-	if (count >= max) {
+	if (parseInt(count) >= parseInt(max)) {
 		return new Response('Too Many Requests', { status: 429 })
 	}
 

@@ -30,6 +30,10 @@ export type ApiLimits = {
 	dayTimestamp: number
 }
 
+export type StringifyFields<T> = {
+	[K in keyof T]: string
+}
+
 export interface DataProvider {
 	deleteArkiveData(arkive: arkiverTypes.Arkive): Promise<void>
 }
