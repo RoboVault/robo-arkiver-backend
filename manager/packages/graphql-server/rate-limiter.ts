@@ -71,7 +71,7 @@ export const apiKeyLimiter = async (
 		pl.expire(apiKeyRedisKey, 60 * 60 * 24)
 		await pl.flush()
 	}
-	if (!limits || (limits && (limits as string[]).length === 0)) {
+	if (!limits || (Array.isArray(limits) && limits.length === 0)) {
 		const arkiveLimits = await arkiveProvider.getLimits(username)
 		if (!arkiveLimits) {
 			return new Response('Username Not Found', { status: 404 })

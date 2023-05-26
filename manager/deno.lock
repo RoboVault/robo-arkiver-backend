@@ -1,6 +1,9 @@
 {
   "version": "2",
   "remote": {
+    "https://deno.land/std@0.132.0/fmt/colors.ts": "30455035d6d728394781c10755351742dd731e3db6771b1843f9b9e490104d37",
+    "https://deno.land/std@0.132.0/testing/_diff.ts": "9d849cd6877694152e01775b2d93f9d6b7aef7e24bfe3bfafc4d7a1ac8e9f392",
+    "https://deno.land/std@0.132.0/testing/asserts.ts": "b0ef969032882b1f7eb1c7571e313214baa1485f7b61cf35807b2434e254365c",
     "https://deno.land/std@0.150.0/media_types/_util.ts": "ce9b4fc4ba1c447dafab619055e20fd88236ca6bdd7834a21f98bd193c3fbfa1",
     "https://deno.land/std@0.150.0/media_types/mod.ts": "2d4b6f32a087029272dc59e0a55ae3cc4d1b27b794ccf528e94b1925795b3118",
     "https://deno.land/std@0.150.0/media_types/vendor/mime-db.v1.52.0.ts": "724cee25fa40f1a52d3937d6b4fbbfdd7791ff55e1b7ac08d9319d5632c7f5af",
@@ -506,8 +509,8 @@
       "graphql-compose-mongoose": "graphql-compose-mongoose@9.8.0_graphql-compose@9.0.10_mongoose@7.2.0",
       "graphql-yoga": "graphql-yoga@3.9.1_graphql@16.6.0_@envelop+core@3.0.6",
       "lru-cache": "lru-cache@9.1.1",
-      "mongoose": "mongoose@7.2.0",
-      "viem": "viem@0.3.34_ws@8.12.0"
+      "mongoose": "mongoose@7.2.1",
+      "viem": "viem@0.3.36_ws@8.12.0"
     },
     "packages": {
       "@adraffy/ens-normalize@1.8.9": {
@@ -924,6 +927,18 @@
           "sift": "sift@16.0.1"
         }
       },
+      "mongoose@7.2.1": {
+        "integrity": "sha512-c2OOl+ch9NlmPeJw7UjSb2jHNjoOw1XXHyzwygIf4z1GmaBx1OYb8OYqHkYPivvEmfY/vUWZFCgePsDqZgFn2w==",
+        "dependencies": {
+          "bson": "bson@5.3.0",
+          "kareem": "kareem@2.5.1",
+          "mongodb": "mongodb@5.5.0",
+          "mpath": "mpath@0.9.0",
+          "mquery": "mquery@5.0.0",
+          "ms": "ms@2.1.3",
+          "sift": "sift@16.0.1"
+        }
+      },
       "mpath@0.9.0": {
         "integrity": "sha512-ikJRQTk8hw5DEoFVxHG1Gn9T/xcjtdnOKIU1JTmGjZZlg9LST2mBLmcX3/ICIbgJydT2GOc15RnNy5mHmzfSew==",
         "dependencies": {}
@@ -1019,6 +1034,20 @@
       },
       "viem@0.3.34_ws@8.12.0": {
         "integrity": "sha512-QkzLYin6xbo0NZjlk9/elXRoRoO0v7/liwmVrgi1K84rg15YnUlQisRZ5svegRtKlUw42ci9PFzUFtb6/wgE1A==",
+        "dependencies": {
+          "@adraffy/ens-normalize": "@adraffy/ens-normalize@1.9.0",
+          "@noble/curves": "@noble/curves@1.0.0",
+          "@noble/hashes": "@noble/hashes@1.3.0",
+          "@scure/bip32": "@scure/bip32@1.3.0",
+          "@scure/bip39": "@scure/bip39@1.2.0",
+          "@wagmi/chains": "@wagmi/chains@0.2.16",
+          "abitype": "abitype@0.8.2_typescript@5.0.4",
+          "isomorphic-ws": "isomorphic-ws@5.0.0_ws@8.12.0",
+          "ws": "ws@8.12.0"
+        }
+      },
+      "viem@0.3.36_ws@8.12.0": {
+        "integrity": "sha512-8wgZyG+Zty6b9ztM5+/1xBZBl/z1/YFtQJZqrvSOUnbrIL7u786XeZXDPyoY6zbR0HTt14k5ATsEPnXnCyDhtg==",
         "dependencies": {
           "@adraffy/ens-normalize": "@adraffy/ens-normalize@1.9.0",
           "@noble/curves": "@noble/curves@1.0.0",

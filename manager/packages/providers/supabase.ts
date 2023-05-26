@@ -187,7 +187,7 @@ export class SupabaseProvider implements ArkiveProvider {
 		const { data, error } = await this.supabase
 			.from(SUPABASE_TABLES.TIER_INFO)
 			.select(
-				`d_gql_max_count, hf_gql_max_count, hf_gql_window, ${SUPABASE_TABLES.USER_PROFILE}(username)`,
+				`d_gql_max_count, hf_gql_max_count, hf_gql_window, ${SUPABASE_TABLES.USER_PROFILE}!inner(username)`,
 			)
 			.eq(`${SUPABASE_TABLES.USER_PROFILE}.username`, username)
 
@@ -199,7 +199,16 @@ export class SupabaseProvider implements ArkiveProvider {
 			return null
 		}
 
-		const { d_gql_max_count, hf_gql_max_count, hf_gql_window } = data[0]
+		const { d_gql_max_count, hf_gql_max_count, hf_gql_window, user_profile } =
+			data[0]
+
+		if (
+			!user_profile ||
+			(Array.isArray(user_profile) && user_profile.length === 0)
+		) {
+			return null
+		}
+
 		const now = Date.now()
 
 		return {
@@ -221,7 +230,16 @@ export class SupabaseProvider implements ArkiveProvider {
 			throw error
 		}
 
-		return data.length > 0
+		if (data.length === 0) {
+			return false
+		}
+
+		const apiKeys = data[0][SUPABASE_TABLES.API_KEYS]
+		if (!apiKeys || (Array.isArray(apiKeys) && apiKeys.length === 0)) {
+			return false
+		}
+
+		return true
 	}
 
 	public close(): void {
