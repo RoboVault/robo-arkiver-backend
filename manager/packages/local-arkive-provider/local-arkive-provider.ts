@@ -179,11 +179,18 @@ export class LocalArkiveProvider implements ArkiveProvider {
 	async pullDeployment(_arkives: arkiverTypes.Arkive): Promise<void> {}
 
 	getLimits(_username: string): Promise<ApiLimits | null> {
+		const now = Date.now()
 		return Promise.resolve({
 			count: 0,
 			max: 0,
-			dayTimestamp: Date.now(),
+			dayTimestamp: now - (now % 86400000),
+			hfMax: 20,
+			hfWindow: 2,
 		})
+	}
+
+	validateApiKey(_apiKey: string): Promise<boolean> {
+		return Promise.resolve(true)
 	}
 
 	// deno-lint-ignore require-await

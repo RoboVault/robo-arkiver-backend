@@ -21,11 +21,14 @@ export interface ArkiveProvider {
 	): Promise<void>
 	getUsername(userId: string): Promise<string>
 	getLimits(username: string): Promise<ApiLimits | null>
+	validateApiKey(apiKey: string): Promise<boolean>
 	close(): void
 }
 
 export type ApiLimits = {
 	max: number
+	hfMax: number
+	hfWindow: number
 	count: number
 	dayTimestamp: number
 }

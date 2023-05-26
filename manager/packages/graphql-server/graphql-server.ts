@@ -12,12 +12,8 @@ import { ERROR_CODES } from '../constants.ts'
 import { logger } from '../logger.ts'
 import { ArkiveProvider } from '../providers/interfaces.ts'
 import { getEnv } from '../utils.ts'
-import { arkivesDir } from './manager.ts'
-import {
-	apiKeyLimiter,
-	createIpLimiter,
-	IpRateLimitOptions,
-} from './rate-limiter.ts'
+import { arkivesDir } from '../manager/manager.ts'
+import { apiKeyLimiter, createIpLimiter } from './rate-limiter.ts'
 
 export class GraphQLServer {
 	private pathToYoga: Map<
@@ -28,10 +24,6 @@ export class GraphQLServer {
 	private arkiveIdToHighestVersion: Map<number, number> = new Map()
 	arkiverProvider: ArkiveProvider
 	private redis?: redis.Redis
-	private ipRateLimitOptions: IpRateLimitOptions = {
-		max: 20,
-		window: 2,
-	}
 
 	constructor(
 		arkiveProvider: ArkiveProvider,
@@ -179,33 +171,47 @@ export class GraphQLServer {
 		}
 
 		const apiKey = url.searchParams.get('apiKey')
-		let ipLimiter
 
 		if (apiKey) {
-			const username = url.pathname.split('/')[1]
+			const [, username, arkivename] = url.pathname.split('/')
 			const apiKeyLimited = await apiKeyLimiter({
 				redis: this.redis,
 				apiKey,
 				username,
 				arkiveProvider: this.arkiverProvider,
+				arkivename,
 			})
-			if (apiKeyLimited) {
+			if (apiKeyLimited instanceof Response) {
 				return apiKeyLimited
 			}
+			const { hfMax, hfWindow } = apiKeyLimited
 
-			ipLimiter = createIpLimiter(this.redis, {
-				max: this.ipRateLimitOptions.max,
-				window: this.ipRateLimitOptions.window,
+			const ipLimiter = createIpLimiter(this.redis, {
+				max: hfMax,
+				window: hfWindow,
 			})
+
+			const ipLimited = await ipLimiter(req, connInfo)
+			if (ipLimited) {
+				return ipLimited
+			}
 		} else {
-			ipLimiter = createIpLimiter(this.redis, {
+			const ipLimiter = createIpLimiter(this.redis, {
 				max: 10,
 				window: 5,
 			})
-		}
-		const ipLimited = await ipLimiter(req, connInfo)
-		if (ipLimited) {
-			return ipLimited
+			const ipLimited = await ipLimiter(req, connInfo)
+			if (ipLimited) {
+				return ipLimited
+			}
+			const dayIpLimit = createIpLimiter(this.redis, {
+				max: 5000,
+				window: 24 * 60 * 60,
+			})
+			const dayIpLimited = await dayIpLimit(req, connInfo)
+			if (dayIpLimited) {
+				return dayIpLimited
+			}
 		}
 
 		return await yoga(req)

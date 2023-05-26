@@ -186,7 +186,9 @@ export class SupabaseProvider implements ArkiveProvider {
 	public async getLimits(username: string): Promise<ApiLimits | null> {
 		const { data, error } = await this.supabase
 			.from(SUPABASE_TABLES.TIER_INFO)
-			.select(`d_gql_max_count, ${SUPABASE_TABLES.USER_PROFILE}(username)`)
+			.select(
+				`d_gql_max_count, hf_gql_max_count, hf_gql_window, ${SUPABASE_TABLES.USER_PROFILE}(username)`,
+			)
 			.eq(`${SUPABASE_TABLES.USER_PROFILE}.username`, username)
 
 		if (error) {
@@ -197,13 +199,29 @@ export class SupabaseProvider implements ArkiveProvider {
 			return null
 		}
 
-		const { d_gql_max_count } = data[0]
+		const { d_gql_max_count, hf_gql_max_count, hf_gql_window } = data[0]
+		const now = Date.now()
 
 		return {
 			count: 1,
 			max: d_gql_max_count,
-			dayTimestamp: Date.now(),
+			dayTimestamp: now - (now % 86400000),
+			hfMax: hf_gql_max_count,
+			hfWindow: hf_gql_window,
 		}
+	}
+
+	public async validateApiKey(apiKey: string): Promise<boolean> {
+		const { data, error } = await this.supabase
+			.from(SUPABASE_TABLES.USER_PROFILE)
+			.select(`${SUPABASE_TABLES.API_KEYS}(api_key)`)
+			.eq(`${SUPABASE_TABLES.API_KEYS}.api_key`, apiKey)
+
+		if (error) {
+			throw error
+		}
+
+		return data.length > 0
 	}
 
 	public close(): void {

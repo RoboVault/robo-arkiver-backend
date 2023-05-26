@@ -1,8 +1,12 @@
-import { assertEquals } from 'https://deno.land/std@0.188.0/testing/asserts.ts'
+import {
+	assertEquals,
+	assertNotInstanceOf,
+} from 'https://deno.land/std@0.188.0/testing/asserts.ts'
 import { http, redis } from '../../deps.ts'
 import { apiKeyLimiter, createIpLimiter } from './rate-limiter.ts'
 import { ArkiveProvider } from '../providers/interfaces.ts'
 import { REDIS_KEYS } from '../constants.ts'
+import { assertInstanceOf } from 'https://deno.land/std@0.132.0/testing/asserts.ts'
 
 Deno.test('IP Rate Limit', async () => {
 	const redisClient = await redis.connect({
@@ -51,11 +55,17 @@ Deno.test('API key rate limit should return null when not limited and return a 4
 				count: 1,
 				max: 100,
 				dayTimestamp: Date.now(),
+				hfMax: 100,
+				hfWindow: 10,
 			})
+		},
+		validateApiKey: (_apiKey: string) => {
+			return Promise.resolve(true)
 		},
 	} as ArkiveProvider
 	const apiKey = crypto.randomUUID()
 	const username = 'testuser'
+	const arkivename = 'testarkive'
 	await redisClient.flushdb()
 	await redisClient.sadd(REDIS_KEYS.API_KEYS, apiKey)
 
@@ -63,32 +73,36 @@ Deno.test('API key rate limit should return null when not limited and return a 4
 		const limited = await apiKeyLimiter({
 			apiKey,
 			arkiveProvider,
+			arkivename,
 			redis: redisClient,
 			username,
 		})
-		assertEquals(limited, null, `Failed on iteration ${i}`)
+		assertNotInstanceOf(limited, Response, `Failed on iteration ${i}`)
 	}
 
 	const limited = await apiKeyLimiter({
 		apiKey,
 		arkiveProvider,
+		arkivename,
 		redis: redisClient,
 		username,
 	})
-	assertEquals(limited?.status, 429)
+	assertInstanceOf(limited, Response)
+	assertEquals(limited.status, 429)
 
 	await redisClient.hset(
-		`${REDIS_KEYS.LIMITS}:${username}`,
+		`${REDIS_KEYS.LIMITS}:${username}:${arkivename}`,
 		'dayTimestamp',
 		Date.now() - 48 * 60 * 60 * 1000,
 	)
 	const limitedReset = await apiKeyLimiter({
 		apiKey,
 		arkiveProvider,
+		arkivename,
 		redis: redisClient,
 		username,
 	})
-	assertEquals(limitedReset, null)
+	assertNotInstanceOf(limitedReset, Response, 'Failed after day reset')
 
 	redisClient.close()
 })
@@ -104,20 +118,28 @@ Deno.test('API key rate limit should return 401 response with invalid API key', 
 				count: 1,
 				max: 100,
 				dayTimestamp: Date.now(),
+				hfMax: 100,
+				hfWindow: 10,
 			})
+		},
+		validateApiKey: (_apiKey: string) => {
+			return Promise.resolve(false)
 		},
 	} as ArkiveProvider
 	const apiKey = crypto.randomUUID()
 	const username = 'testuser'
+	const arkivename = 'testarkive'
 	await redisClient.flushdb()
 
 	const limitedNoKey = await apiKeyLimiter({
 		apiKey,
+		arkivename,
 		arkiveProvider,
 		redis: redisClient,
 		username,
 	})
-	assertEquals(limitedNoKey?.status, 401)
+	assertInstanceOf(limitedNoKey, Response)
+	assertEquals(limitedNoKey.status, 401)
 
 	redisClient.close()
 })

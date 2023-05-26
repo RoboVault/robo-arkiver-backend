@@ -32,6 +32,7 @@ export async function get(
 		'a.thumbnail_url',
 		'a.code_repo_url',
 		'a.project_url',
+		'a.environment',
 		'up.username',
 	]
 

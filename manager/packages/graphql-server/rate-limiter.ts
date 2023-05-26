@@ -50,31 +50,43 @@ export const apiKeyLimiter = async (
 		arkiveProvider: ArkiveProvider
 		apiKey: string
 		username: string
+		arkivename: string
 	},
 ) => {
-	const { apiKey, username, arkiveProvider, redis } = params
+	const { apiKey, username, arkiveProvider, redis, arkivename } = params
+	const apiKeyRedisKey = `${REDIS_KEYS.API_KEYS}:${username}`
+	const limitRedisKey = `${REDIS_KEYS.LIMITS}:${username}:${arkivename}`
 
 	const pl = redis.pipeline()
-	pl.sismember(REDIS_KEYS.API_KEYS, apiKey)
-	pl.hgetall(`${REDIS_KEYS.LIMITS}:${username}`)
+	pl.sismember(apiKeyRedisKey, apiKey)
+	pl.hgetall(limitRedisKey)
 	const [validApiKey, limits] = await pl.flush()
 
 	if (validApiKey === 0) {
-		return new Response('Unauthorized', { status: 401 })
+		if (!(await arkiveProvider.validateApiKey(apiKey))) {
+			return new Response('Unauthorized', { status: 401 })
+		}
+		const pl = redis.pipeline()
+		pl.sadd(apiKeyRedisKey, apiKey)
+		pl.expire(apiKeyRedisKey, 60 * 60 * 24)
+		await pl.flush()
 	}
 	if (!limits || (limits && (limits as string[]).length === 0)) {
 		const arkiveLimits = await arkiveProvider.getLimits(username)
 		if (!arkiveLimits) {
 			return new Response('Username Not Found', { status: 404 })
 		}
-		await redis.hset(`${REDIS_KEYS.LIMITS}:${username}`, arkiveLimits)
-		return null
+		await redis.hset(limitRedisKey, arkiveLimits)
+		return {
+			hfMax: arkiveLimits.hfMax,
+			hfWindow: arkiveLimits.hfWindow,
+		}
 	}
 
-	const { count, dayTimestamp, max } = buildObjectFromArray(
+	const { count, dayTimestamp, max, hfMax, hfWindow } = buildObjectFromArray(
 		limits as string[],
 	)
-	if (!count || !dayTimestamp || !max) {
+	if (!count || !dayTimestamp || !max || !hfMax || !hfWindow) {
 		return new Response(
 			`Internal Server Error: ${ERROR_CODES.INVALID_API_LIMITS}`,
 			{ status: 500 },
@@ -83,18 +95,24 @@ export const apiKeyLimiter = async (
 
 	const now = Date.now()
 	if (now - parseInt(dayTimestamp) > 86_400_000) {
-		await redis.hset(`${REDIS_KEYS.LIMITS}:${username}`, {
+		await redis.hset(limitRedisKey, {
 			count: 1,
-			dayTimestamp: now,
+			dayTimestamp: now - (now % 86_400_000),
 		})
-		return null
+		return {
+			hfMax: parseInt(hfMax),
+			hfWindow: parseInt(hfWindow),
+		}
 	}
 
 	if (parseInt(count) >= parseInt(max)) {
 		return new Response('Too Many Requests', { status: 429 })
 	}
 
-	await redis.hincrby(`${REDIS_KEYS.LIMITS}:${username}`, 'count', 1)
+	await redis.hincrby(limitRedisKey, 'count', 1)
 
-	return null
+	return {
+		hfMax: parseInt(hfMax),
+		hfWindow: parseInt(hfWindow),
+	}
 }

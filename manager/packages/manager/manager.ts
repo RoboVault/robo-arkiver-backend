@@ -5,7 +5,7 @@ import { logger } from '../logger.ts'
 import { collectRpcUrls, getEnv, rm } from '../utils.ts'
 import { ArkiveMessageEvent, NewArkiveMessageEvent } from './types.ts'
 import { MongoDataProvider } from '../providers/mongodb.ts'
-import { GraphQLServer } from './graphql-server.ts'
+import { GraphQLServer } from '../graphql-server/graphql-server.ts'
 import { LocalArkiveProvider } from '../local-arkive-provider/local-arkive-provider.ts'
 
 export const arkivesDir = '../../arkives'
