@@ -2,7 +2,7 @@ import { SupabaseProvider } from '../providers/supabase.ts'
 import { ArkiveProvider, DataProvider } from '../providers/interfaces.ts'
 import { arkiverTypes, path } from '../../deps.ts'
 import { logger } from '../logger.ts'
-import { collectRpcUrls, getEnv, rm } from '../utils.ts'
+import { collectRpcUrls, getEnv, getSupabaseClient, rm } from '../utils.ts'
 import { ArkiveMessageEvent, NewArkiveMessageEvent } from './types.ts'
 import { MongoDataProvider } from '../providers/mongodb.ts'
 import { GraphQLServer } from '../graphql-server/graphql-server.ts'
@@ -29,17 +29,19 @@ export class ArkiveManager {
 		this.removeArkive = this.removeArkive.bind(this)
 
 		const environment = params.environment.toLowerCase()
+		const supabase = getSupabaseClient()
+
 		this.options = params
 		this.arkiveProvider = environment === 'dev'
 			? new LocalArkiveProvider()
-			: new SupabaseProvider({ environment })
+			: new SupabaseProvider({ environment, supabase })
 
 		if (this.options.manager) {
 			this.dataProvider = new MongoDataProvider()
 			this.rpcUrls = collectRpcUrls()
 		}
 		if (this.options.server) {
-			this.graphQLServer = new GraphQLServer(this.arkiveProvider)
+			this.graphQLServer = new GraphQLServer({ environment, supabase })
 		}
 	}
 

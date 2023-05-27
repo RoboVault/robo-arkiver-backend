@@ -7,13 +7,17 @@ import {
 	mongoose,
 	path as denoPath,
 	redis,
+	supabase,
 } from '../../deps.ts'
 import { ERROR_CODES } from '../constants.ts'
 import { logger } from '../logger.ts'
-import { ArkiveProvider } from '../providers/interfaces.ts'
 import { getEnv } from '../utils.ts'
 import { arkivesDir } from '../manager/manager.ts'
 import { apiKeyLimiter, createIpLimiter } from './rate-limiter.ts'
+import { ApiAuthProvider, ArkiveProvider } from '../providers/interfaces.ts'
+import { SupabaseAuthProvider } from '../providers/supabase-auth.ts'
+import { SupabaseProvider } from '../providers/supabase.ts'
+import { CacheManager } from './cache-manager.ts'
 
 export class GraphQLServer {
 	private pathToYoga: Map<
@@ -22,13 +26,19 @@ export class GraphQLServer {
 		grapQLYoga.YogaServerInstance<{}, {}>
 	> = new Map()
 	private arkiveIdToHighestVersion: Map<number, number> = new Map()
-	arkiverProvider: ArkiveProvider
+	private apiAuthProvider: ApiAuthProvider
+	private arkiveProvider: ArkiveProvider
+	private cacheManager?: CacheManager
 	private redis?: redis.Redis
 
 	constructor(
-		arkiveProvider: ArkiveProvider,
+		params: { supabase: supabase.SupabaseClient; environment: string },
 	) {
-		this.arkiverProvider = arkiveProvider
+		this.apiAuthProvider = new SupabaseAuthProvider(params.supabase)
+		this.arkiveProvider = new SupabaseProvider({
+			environment: params.environment,
+			supabase: params.supabase,
+		})
 	}
 
 	async run() {
@@ -42,6 +52,11 @@ export class GraphQLServer {
 			port: Number(getEnv('REDIS_PORT')),
 		})
 		logger('graphQLServer').info('[GraphQL Server] Connected to Redis')
+
+		this.cacheManager = new CacheManager({
+			apiAuthProvider: this.apiAuthProvider,
+			redis: this.redis,
+		})
 
 		http.serve(
 			async (req, connInfo) => await this.handleRequest(req, connInfo),
@@ -57,7 +72,7 @@ export class GraphQLServer {
 	}
 
 	async removeDeployment(arkive: arkiverTypes.Arkive) {
-		const username = await this.arkiverProvider.getUsername(arkive.user_id)
+		const username = await this.arkiveProvider.getUsername(arkive.user_id)
 		const pathWithVersion =
 			`/${username}/${arkive.name}/${arkive.deployment.major_version}`
 		logger('graphQLServer').info(
@@ -67,7 +82,7 @@ export class GraphQLServer {
 	}
 
 	async addNewDeployment(arkive: arkiverTypes.Arkive) {
-		const username = await this.arkiverProvider.getUsername(arkive.user_id)
+		const username = await this.arkiveProvider.getUsername(arkive.user_id)
 		const manifestPath = new URL(
 			denoPath.join(
 				arkivesDir,
@@ -178,7 +193,7 @@ export class GraphQLServer {
 				redis: this.redis,
 				apiKey,
 				username,
-				arkiveProvider: this.arkiverProvider,
+				apiAuthProvider: this.apiAuthProvider,
 				arkivename,
 			})
 			if (apiKeyLimited instanceof Response) {

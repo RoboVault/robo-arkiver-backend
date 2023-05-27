@@ -1,6 +1,6 @@
-import { ApiLimits, ArkiveProvider } from './interfaces.ts'
+import { ArkiveProvider } from './interfaces.ts'
 import { arkiverTypes, path as denoPath, supabase } from '../../deps.ts'
-import { getSupabaseClient, rm, unpack } from '../utils.ts'
+import { rm, unpack } from '../utils.ts'
 import { arkivesDir } from '../manager/manager.ts'
 import { logger } from '../logger.ts'
 import { SUPABASE_TABLES } from '../constants.ts'
@@ -15,8 +15,10 @@ export class SupabaseProvider implements ArkiveProvider {
 	private deletedArkiveListener?: supabase.RealtimeChannel
 	private environment: string
 
-	constructor(params: { environment: string }) {
-		this.supabase = getSupabaseClient()
+	constructor(
+		params: { environment: string; supabase: supabase.SupabaseClient },
+	) {
+		this.supabase = params.supabase
 		this.environment = params.environment
 	}
 
@@ -181,65 +183,6 @@ export class SupabaseProvider implements ArkiveProvider {
 			throw error
 		}
 		return data.username
-	}
-
-	public async getLimits(username: string): Promise<ApiLimits | null> {
-		const { data, error } = await this.supabase
-			.from(SUPABASE_TABLES.TIER_INFO)
-			.select(
-				`d_gql_max_count, hf_gql_max_count, hf_gql_window, ${SUPABASE_TABLES.USER_PROFILE}!inner(username)`,
-			)
-			.eq(`${SUPABASE_TABLES.USER_PROFILE}.username`, username)
-
-		if (error) {
-			throw error
-		}
-
-		if (data.length === 0) {
-			return null
-		}
-
-		const { d_gql_max_count, hf_gql_max_count, hf_gql_window, user_profile } =
-			data[0]
-
-		if (
-			!user_profile ||
-			(Array.isArray(user_profile) && user_profile.length === 0)
-		) {
-			return null
-		}
-
-		const now = Date.now()
-
-		return {
-			count: 1,
-			max: d_gql_max_count,
-			dayTimestamp: now - (now % 86400000),
-			hfMax: hf_gql_max_count,
-			hfWindow: hf_gql_window,
-		}
-	}
-
-	public async validateApiKey(apiKey: string): Promise<boolean> {
-		const { data, error } = await this.supabase
-			.from(SUPABASE_TABLES.USER_PROFILE)
-			.select(`${SUPABASE_TABLES.API_KEYS}(api_key)`)
-			.eq(`${SUPABASE_TABLES.API_KEYS}.api_key`, apiKey)
-
-		if (error) {
-			throw error
-		}
-
-		if (data.length === 0) {
-			return false
-		}
-
-		const apiKeys = data[0][SUPABASE_TABLES.API_KEYS]
-		if (!apiKeys || (Array.isArray(apiKeys) && apiKeys.length === 0)) {
-			return false
-		}
-
-		return true
 	}
 
 	public close(): void {

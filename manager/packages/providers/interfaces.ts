@@ -1,4 +1,5 @@
 import { arkiverTypes } from '../../deps.ts'
+import { UserProfile } from './supabase-auth.ts'
 
 export interface IndexedBlockHeightParams {
 	chain: string
@@ -20,17 +21,23 @@ export interface ArkiveProvider {
 		status: string,
 	): Promise<void>
 	getUsername(userId: string): Promise<string>
-	getLimits(username: string): Promise<ApiLimits | null>
-	validateApiKey(apiKey: string): Promise<boolean>
 	close(): void
+}
+
+export interface ApiAuthProvider {
+	getUserLimits(username: string): Promise<ApiLimits | null>
+	getTierLimits(tierInfoId: number): Promise<ApiLimits | null>
+	validateApiKey(apiKey: string, username: string): Promise<boolean>
+	listenDeletedApiKey(callback: (apiKey: string) => Promise<void>): void
+	listenUserUpgrade(
+		callback: (payload: UserProfile) => Promise<void>,
+	): void
 }
 
 export type ApiLimits = {
 	max: number
 	hfMax: number
 	hfWindow: number
-	count: number
-	dayTimestamp: number
 }
 
 export type StringifyFields<T> = {

@@ -6,8 +6,8 @@ import { http, redis } from '../../deps.ts'
 import { apiKeyLimiter, createIpLimiter } from './rate-limiter.ts'
 import { REDIS_KEYS } from '../constants.ts'
 import { assertInstanceOf } from 'https://deno.land/std@0.132.0/testing/asserts.ts'
-import { SupabaseProvider } from '../providers/supabase.ts'
-import { ArkiveProvider } from '../providers/interfaces.ts'
+import { getSupabaseClient } from '../utils.ts'
+import { SupabaseAuthProvider } from '../providers/supabase-auth.ts'
 
 Deno.test('IP Rate Limit', async () => {
 	const redisClient = await redis.connect({
@@ -55,31 +55,18 @@ Deno.test({
 			hostname: '127.0.0.1',
 			port: 6379,
 		})
-		const arkiveProvider = {
-			getLimits: (_username: string) => {
-				return Promise.resolve({
-					count: 1,
-					max: 100,
-					dayTimestamp: Date.now(),
-					hfMax: 100,
-					hfWindow: 10,
-				})
-			},
-			validateApiKey: (_apiKey: string) => {
-				return Promise.resolve(true)
-			},
-		} as ArkiveProvider
-		// const arkiveProvider = new SupabaseProvider({ environment: 'staging' })
+		const supabase = getSupabaseClient()
+		const apiAuthProvider = new SupabaseAuthProvider(supabase)
 		const apiKey = '90fcbac9-001d-4a7d-9904-b31296074068'
 		const username = 'hzlntcld'
 		const arkivename = 'testarkive'
 		await redisClient.flushdb()
-		await redisClient.sadd(`${REDIS_KEYS.API_KEYS}:${username}`, apiKey)
+		await redisClient.set(apiKey, username)
 
 		for (let i = 0; i < 100; i++) {
 			const limited = await apiKeyLimiter({
 				apiKey,
-				arkiveProvider,
+				apiAuthProvider,
 				arkivename,
 				redis: redisClient,
 				username,
@@ -93,28 +80,32 @@ Deno.test({
 
 		const limited = await apiKeyLimiter({
 			apiKey,
-			arkiveProvider,
+			apiAuthProvider,
 			arkivename,
 			redis: redisClient,
 			username,
 		})
-		assertInstanceOf(limited, Response)
+		assertInstanceOf(
+			limited,
+			Response,
+			`Failed on iteration 101: got ${JSON.stringify(limited)}`,
+		)
 		assertEquals(limited.status, 429)
 
-		await redisClient.hset(
-			`${REDIS_KEYS.LIMITS}:${username}:${arkivename}`,
-			'dayTimestamp',
-			Date.now() - 48 * 60 * 60 * 1000,
+		await redisClient.expire(
+			`${REDIS_KEYS.API_RATELIMITER}:${username}:${arkivename}`,
+			0,
 		)
 		const limitedReset = await apiKeyLimiter({
 			apiKey,
-			arkiveProvider,
+			apiAuthProvider,
 			arkivename,
 			redis: redisClient,
 			username,
 		})
 		assertNotInstanceOf(limitedReset, Response, 'Failed after day reset')
 
+		await redisClient.flushdb()
 		redisClient.close()
 	},
 })
@@ -128,22 +119,9 @@ Deno.test({
 			hostname: '127.0.0.1',
 			port: 6379,
 		})
-		const arkiveProvider = {
-			getLimits: (_username: string) => {
-				return Promise.resolve({
-					count: 1,
-					max: 100,
-					dayTimestamp: Date.now(),
-					hfMax: 100,
-					hfWindow: 10,
-				})
-			},
-			validateApiKey: (_apiKey: string) => {
-				return Promise.resolve(false)
-			},
-		} as ArkiveProvider
-		// const arkiveProvider = new SupabaseProvider({ environment: 'staging' })
-		const apiKey = 'invalid-api-key'
+		const supabase = getSupabaseClient()
+		const apiAuthProvider = new SupabaseAuthProvider(supabase)
+		const apiKey = crypto.randomUUID()
 		const username = 'hzlntcld'
 		const arkivename = 'testarkive'
 		await redisClient.flushdb()
@@ -151,7 +129,7 @@ Deno.test({
 		const limitedNoKey = await apiKeyLimiter({
 			apiKey,
 			arkivename,
-			arkiveProvider,
+			apiAuthProvider,
 			redis: redisClient,
 			username,
 		})

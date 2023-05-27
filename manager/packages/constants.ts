@@ -1,7 +1,7 @@
 export const REDIS_KEYS = {
 	IP_RATELIMITER: 'ip-ratelimiter',
-	API_KEYS: 'api-keys',
 	LIMITS: 'limits',
+	API_RATELIMITER: 'api-ratelimiter',
 } as const
 
 export const SUPABASE_TABLES = {

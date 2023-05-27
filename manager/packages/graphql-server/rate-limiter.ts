@@ -1,6 +1,6 @@
 import { http, redis } from '../../deps.ts'
 import { ERROR_CODES, REDIS_KEYS } from '../constants.ts'
-import { ArkiveProvider } from '../providers/interfaces.ts'
+import { ApiAuthProvider } from '../providers/interfaces.ts'
 import { buildObjectFromArray } from '../utils.ts'
 export type RateLimiter = (
 	req: Request,
@@ -47,69 +47,68 @@ export const createIpLimiter = (
 export const apiKeyLimiter = async (
 	params: {
 		redis: redis.Redis
-		arkiveProvider: ArkiveProvider
+		apiAuthProvider: ApiAuthProvider
 		apiKey: string
 		username: string
 		arkivename: string
 	},
 ) => {
-	const { apiKey, username, arkiveProvider, redis, arkivename } = params
-	const apiKeyRedisKey = `${REDIS_KEYS.API_KEYS}:${username}`
-	const limitRedisKey = `${REDIS_KEYS.LIMITS}:${username}:${arkivename}`
+	const { apiKey, username, apiAuthProvider, redis, arkivename } = params
+	const limitRedisKey = `${REDIS_KEYS.LIMITS}:${username}`
+	const countRedisKey =
+		`${REDIS_KEYS.API_RATELIMITER}:${username}:${arkivename}`
 
 	const pl = redis.pipeline()
-	pl.sismember(apiKeyRedisKey, apiKey)
+	pl.get(apiKey)
+	pl.get(countRedisKey)
 	pl.hgetall(limitRedisKey)
-	const [validApiKey, limits] = await pl.flush()
+	const [cachedUsername, count, limits] = await pl.flush()
 
-	if (validApiKey === 0) {
-		if (!(await arkiveProvider.validateApiKey(apiKey))) {
+	if (!cachedUsername || cachedUsername !== username) {
+		if (!(await apiAuthProvider.validateApiKey(apiKey, username))) {
 			return new Response('Unauthorized', { status: 401 })
 		}
-		const pl = redis.pipeline()
-		pl.sadd(apiKeyRedisKey, apiKey)
-		pl.expire(apiKeyRedisKey, 60 * 60 * 24)
-		await pl.flush()
+		await redis.set(apiKey, username, { ex: 60 * 60 * 24 })
 	}
 	if (!limits || (Array.isArray(limits) && limits.length === 0)) {
-		const arkiveLimits = await arkiveProvider.getLimits(username)
+		const arkiveLimits = await apiAuthProvider.getUserLimits(username)
 		if (!arkiveLimits) {
 			return new Response('Username Not Found', { status: 404 })
 		}
 		await redis.hset(limitRedisKey, arkiveLimits)
+		if (!count) {
+			await redis.set(countRedisKey, 1, { ex: 60 * 60 * 24 } /* 24 hours */)
+		}
+
 		return {
 			hfMax: arkiveLimits.hfMax,
 			hfWindow: arkiveLimits.hfWindow,
 		}
 	}
 
-	const { count, dayTimestamp, max, hfMax, hfWindow } = buildObjectFromArray(
+	const { max, hfMax, hfWindow } = buildObjectFromArray(
 		limits as string[],
 	)
-	if (!count || !dayTimestamp || !max || !hfMax || !hfWindow) {
+	if (!max || !hfMax || !hfWindow) {
 		return new Response(
 			`Internal Server Error: ${ERROR_CODES.INVALID_API_LIMITS}`,
 			{ status: 500 },
 		)
 	}
 
-	const now = Date.now()
-	if (now - parseInt(dayTimestamp) > 86_400_000) {
-		await redis.hset(limitRedisKey, {
-			count: 1,
-			dayTimestamp: now - (now % 86_400_000),
-		})
+	if (!count) {
+		await redis.set(countRedisKey, 1, { ex: 60 * 60 * 24 } /* 24 hours */)
 		return {
 			hfMax: parseInt(hfMax),
 			hfWindow: parseInt(hfWindow),
 		}
 	}
 
-	if (parseInt(count) >= parseInt(max)) {
+	if (parseInt(count as string) >= parseInt(max)) {
 		return new Response('Too Many Requests', { status: 429 })
 	}
 
-	await redis.hincrby(limitRedisKey, 'count', 1)
+	await redis.incr(countRedisKey)
 
 	return {
 		hfMax: parseInt(hfMax),
