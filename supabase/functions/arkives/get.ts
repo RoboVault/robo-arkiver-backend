@@ -1,4 +1,5 @@
-import { postgres, SupabaseClient } from '../_shared/deps.ts'
+import { RedisCache } from '../_shared/cache.ts'
+import { cachified, postgres, SupabaseClient } from '../_shared/deps.ts'
 import { HttpError } from '../_shared/http_error.ts'
 import { getUsernameFromUserId } from '../_shared/username.ts'
 import { getEnv } from '../_shared/utils.ts'
@@ -36,11 +37,15 @@ export async function get(
 		'up.username',
 	]
 
-	const arkives = await sql`
+	const arkives = await cachified({
+		key: `arkives-${username}-${arkivename}-${minimal}-${_publicOnly}`,
+		cache: new RedisCache(),
+		getFreshValue: () =>
+			sql`
     SELECT
       ${sql(columns)}
 			${
-		minimal ? sql`` : sql`, ARRAY_AGG(
+				minimal ? sql`` : sql`, ARRAY_AGG(
 				json_build_object(
 					'deployment_id', d.id,
 					'deployment_created_at', d.created_at,
@@ -52,33 +57,34 @@ export async function get(
 					'manifest', d.manifest
 				)
 			) AS deployments`
-	}
+			}
     FROM
       public.arkive a
     JOIN
       public.user_profile up ON a.user_id = up.id
     ${
-		minimal ? sql`` : sql`LEFT JOIN
+				minimal ? sql`` : sql`LEFT JOIN
       public.deployments d ON a.id = d.arkive_id`
-	}
+			}
     ${
-		_publicOnly
-			? username
-				? arkivename
-					? sql`WHERE a.public = true AND up.username = ${username} AND a.name = ${arkivename}`
-					: sql`WHERE a.public = true AND up.username = ${username}`
-				: sql`WHERE a.public = true`
-			: username
-			? arkivename
-				? sql`WHERE up.username = ${username} AND a.name = ${arkivename}`
-				: sql`WHERE up.username = ${username}`
-			: sql`WHERE a.public = true` // return empty array
-	}
+				_publicOnly
+					? username
+						? arkivename
+							? sql`WHERE a.public = true AND up.username = ${username} AND a.name = ${arkivename}`
+							: sql`WHERE a.public = true AND up.username = ${username}`
+						: sql`WHERE a.public = true`
+					: username
+					? arkivename
+						? sql`WHERE up.username = ${username} AND a.name = ${arkivename}`
+						: sql`WHERE up.username = ${username}`
+					: sql`WHERE a.public = true` // return empty array
+			}
     ${
-		minimal ? sql`` : sql`GROUP BY
+				minimal ? sql`` : sql`GROUP BY
       a.id, up.username`
-	};
-  `
+			};
+  `,
+	})
 
 	if (username && arkivename && arkives.length === 0) {
 		throw new HttpError(404, 'Arkive not found')

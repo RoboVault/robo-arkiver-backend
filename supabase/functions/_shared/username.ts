@@ -1,5 +1,6 @@
 import { SUPABASE_TABLES } from '../../../manager/packages/constants.ts'
-import { SupabaseClient } from './deps.ts'
+import { RedisCache } from './cache.ts'
+import { cachified, SupabaseClient } from './deps.ts'
 import { HttpError } from './http_error.ts'
 
 export const getUserIdFromUsername = async (
@@ -26,11 +27,16 @@ export const getUsernameFromUserId = async (
 	supabase: SupabaseClient,
 	userId: string,
 ) => {
-	const profileRes = await supabase
-		.from(SUPABASE_TABLES.USER_PROFILE)
-		.select<'username', { username: string }>('username')
-		.eq('id', userId)
-		.single()
+	const profileRes = await cachified({
+		key: `${userId}-username`,
+		cache: new RedisCache(),
+		getFreshValue: () =>
+			supabase
+				.from(SUPABASE_TABLES.USER_PROFILE)
+				.select<'username', { username: string }>('username')
+				.eq('id', userId)
+				.single(),
+	})
 
 	if (profileRes.error) {
 		if (profileRes.error.code === 'PGRST116') {
