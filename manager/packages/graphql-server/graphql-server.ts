@@ -17,7 +17,6 @@ import { apiKeyLimiter, createIpLimiter } from './rate-limiter.ts'
 import { ApiAuthProvider, ArkiveProvider } from '../providers/interfaces.ts'
 import { SupabaseAuthProvider } from '../providers/supabase-auth.ts'
 import { SupabaseProvider } from '../providers/supabase.ts'
-import { CacheManager } from './cache-manager.ts'
 
 export class GraphQLServer {
 	private pathToYoga: Map<
@@ -28,7 +27,6 @@ export class GraphQLServer {
 	private arkiveIdToHighestVersion: Map<number, number> = new Map()
 	private apiAuthProvider: ApiAuthProvider
 	private arkiveProvider: ArkiveProvider
-	private cacheManager?: CacheManager
 	private redis?: redis.Redis
 
 	constructor(
@@ -52,11 +50,6 @@ export class GraphQLServer {
 			port: Number(getEnv('REDIS_PORT')),
 		})
 		logger('graphQLServer').info('[GraphQL Server] Connected to Redis')
-
-		this.cacheManager = new CacheManager({
-			apiAuthProvider: this.apiAuthProvider,
-			redis: this.redis,
-		})
 
 		http.serve(
 			async (req, connInfo) => await this.handleRequest(req, connInfo),
