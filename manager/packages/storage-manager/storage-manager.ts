@@ -1,5 +1,5 @@
 import 'https://deno.land/std@0.189.0/dotenv/load.ts'
-import { arkiverTypes, mongoose } from '../../deps.ts'
+import { arkiverTypes, influx, log, mongoose } from '../../deps.ts'
 import {
 	ApiAuthProvider,
 	ArkiveProvider,
@@ -10,6 +10,7 @@ import { getEnv, getSupabaseClient } from '../utils.ts'
 import { logger } from '../logger.ts'
 import { SupabaseProvider } from '../providers/supabase.ts'
 import { SupabaseAuthProvider } from '../providers/supabase-auth.ts'
+import { ArkiveInfluxLogger } from '../manager/logger.ts'
 
 export class StorageManager {
 	#dataProvider: DataProvider
@@ -67,7 +68,7 @@ export class StorageManager {
 			const arkiveSize = await this.#dataProvider.getArkiveSize(deployment)
 			if (arkiveSize > limits.maxStorageBytes) {
 				logger('StorageManager').info(
-					`Arkive ${deployment.id}@${deployment.deployment.major_version}.${deployment.deployment.minor_version} is over the limit of ${limits.maxStorageBytes} bytes`,
+					`Arkive ${deployment.id}@${deployment.deployment.major_version}.${deployment.deployment.minor_version} is over the limit of ${limits.maxStorageBytes} bytes: ${arkiveSize} bytes`,
 				)
 				logger('StorageManager').debug(
 					`Updating arkive ${deployment.id}@${deployment.deployment.major_version}.${deployment.deployment.minor_version} deployment status to 'paused'`,
@@ -86,4 +87,31 @@ export class StorageManager {
 	stop() {
 		clearTimeout(this.#timeoutHandle)
 	}
+}
+
+if (import.meta.main) {
+	const writer = new influx.InfluxDB({
+		url: getEnv('INFLUX_URL'),
+		token: getEnv('INFLUX_TOKEN'),
+	}).getWriteApi(getEnv('INFLUX_ORG'), getEnv('INFLUX_BUCKET'))
+
+	log.setup({
+		handlers: {
+			console: new log.handlers.ConsoleHandler('DEBUG'),
+			influx: new ArkiveInfluxLogger('DEBUG', {
+				writer,
+				tags: {
+					source: 'StorageManager',
+				},
+			}),
+		},
+		loggers: {
+			StorageManager: {
+				handlers: ['console', 'influx'],
+				level: 'DEBUG',
+			},
+		},
+	})
+
+	new StorageManager().init()
 }
