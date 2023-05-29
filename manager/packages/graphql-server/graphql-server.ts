@@ -40,10 +40,6 @@ export class GraphQLServer {
 	}
 
 	async run() {
-		logger('graphQLServer').info('[GraphQL Server] Connecting to MongoDB')
-		await mongoose.connect(getEnv('MONGO_CONNECTION'))
-		logger('graphQLServer').info('[GraphQL Server] Connected to MongoDB')
-
 		logger('graphQLServer').info('[GraphQL Server] Connecting to Redis')
 		this.redis = await redis.connect({
 			hostname: getEnv('REDIS_HOSTNAME'),
