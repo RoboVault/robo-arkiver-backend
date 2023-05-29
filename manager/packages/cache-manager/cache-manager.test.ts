@@ -1,6 +1,6 @@
 import { delay } from 'https://deno.land/std@0.189.0/async/delay.ts'
 import { redis } from '../../deps.ts'
-import { ApiAuthProvider, ApiLimits } from '../providers/interfaces.ts'
+import { ApiAuthProvider, TierLimits } from '../providers/interfaces.ts'
 import { CacheManager } from './cache-manager.ts'
 import { UserProfile } from '../providers/supabase-auth.ts'
 import { REDIS_KEYS } from '../constants.ts'
@@ -27,13 +27,16 @@ Deno.test('Cache Manager', async () => {
 		hfMax: 100,
 		hfWindow: 60,
 		max: 1000,
-	} satisfies ApiLimits
+	} satisfies Omit<TierLimits, 'maxStorageBytes' | 'maxArkiveCount'>
 
 	await Promise.all([
 		redisClient.set(testApiKey, testUser.username),
 		redisClient.hset(
 			`${REDIS_KEYS.LIMITS}:${testUser.username}`,
-			{ hfMax: 0, hfWindow: 0, max: 0 } satisfies ApiLimits,
+			{ hfMax: 0, hfWindow: 0, max: 0 } satisfies Omit<
+				TierLimits,
+				'maxStorageBytes' | 'maxArkiveCount'
+			>,
 		),
 	])
 

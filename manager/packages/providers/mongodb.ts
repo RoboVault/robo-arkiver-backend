@@ -18,4 +18,12 @@ export class MongoDataProvider implements DataProvider {
 			logger('manager').error(`error dropping database for ${arkive.id}: ${e}`)
 		}
 	}
+
+	public async getArkiveSize(arkive: arkiverTypes.Arkive): Promise<number> {
+		const connection = mongoose.connections[0].useDb(
+			`${arkive.id}-${arkive.deployment.major_version}`,
+		)
+		const stats = await connection.db.stats()
+		return stats.dataSize
+	}
 }

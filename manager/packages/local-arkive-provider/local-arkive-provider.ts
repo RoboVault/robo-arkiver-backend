@@ -2,7 +2,7 @@ import { serve } from 'https://deno.land/std@0.183.0/http/mod.ts'
 import { copy, emptyDir } from 'https://deno.land/std@0.183.0/fs/mod.ts'
 import { join } from 'https://deno.land/std@0.183.0/path/mod.ts'
 import { arkiverTypes } from '../../deps.ts'
-import { ApiLimits, ArkiveProvider } from '../providers/interfaces.ts'
+import { ArkiveProvider } from '../providers/interfaces.ts'
 import { arkivesDir } from '../manager/manager.ts'
 import { logger } from '../logger.ts'
 
@@ -177,21 +177,6 @@ export class LocalArkiveProvider implements ArkiveProvider {
 	}
 
 	async pullDeployment(_arkives: arkiverTypes.Arkive): Promise<void> {}
-
-	getLimits(_username: string): Promise<ApiLimits | null> {
-		const now = Date.now()
-		return Promise.resolve({
-			count: 0,
-			max: 0,
-			dayTimestamp: now - (now % 86400000),
-			hfMax: 20,
-			hfWindow: 2,
-		})
-	}
-
-	validateApiKey(_apiKey: string): Promise<boolean> {
-		return Promise.resolve(true)
-	}
 
 	// deno-lint-ignore require-await
 	async updateDeploymentStatus(

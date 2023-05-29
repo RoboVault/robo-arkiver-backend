@@ -1,6 +1,6 @@
 import { supabase } from '../../deps.ts'
 import { SUPABASE_TABLES } from '../constants.ts'
-import { ApiAuthProvider, ApiLimits } from './interfaces.ts'
+import { ApiAuthProvider, TierLimits } from './interfaces.ts'
 
 export class SupabaseAuthProvider implements ApiAuthProvider {
 	#supabase: supabase.SupabaseClient
@@ -35,11 +35,11 @@ export class SupabaseAuthProvider implements ApiAuthProvider {
 		return true
 	}
 
-	async getUserLimits(username: string): Promise<ApiLimits | null> {
+	async getUserLimits(username: string): Promise<TierLimits | null> {
 		const { data, error } = await this.#supabase
 			.from(SUPABASE_TABLES.TIER_INFO)
 			.select(
-				`d_gql_max_count, hf_gql_max_count, hf_gql_window, ${SUPABASE_TABLES.USER_PROFILE}!inner(username)`,
+				`d_gql_max_count, hf_gql_max_count, hf_gql_window, max_arkive_storage, max_arkive_count, ${SUPABASE_TABLES.USER_PROFILE}!inner(username)`,
 			)
 			.eq(`${SUPABASE_TABLES.USER_PROFILE}.username`, username)
 
@@ -51,8 +51,14 @@ export class SupabaseAuthProvider implements ApiAuthProvider {
 			return null
 		}
 
-		const { d_gql_max_count, hf_gql_max_count, hf_gql_window, user_profile } =
-			data[0]
+		const {
+			d_gql_max_count,
+			hf_gql_max_count,
+			hf_gql_window,
+			max_arkive_storage,
+			max_arkive_count,
+			user_profile,
+		} = data[0]
 
 		if (
 			!user_profile ||
@@ -65,14 +71,57 @@ export class SupabaseAuthProvider implements ApiAuthProvider {
 			max: d_gql_max_count,
 			hfMax: hf_gql_max_count,
 			hfWindow: hf_gql_window,
+			maxStorageBytes: max_arkive_storage,
+			maxArkiveCount: max_arkive_count,
 		}
 	}
 
-	async getTierLimits(tierInfoId: number): Promise<ApiLimits | null> {
+	async getUserLimitsById(userId: string): Promise<TierLimits | null> {
 		const { data, error } = await this.#supabase
 			.from(SUPABASE_TABLES.TIER_INFO)
 			.select(
-				`d_gql_max_count, hf_gql_max_count, hf_gql_window`,
+				`d_gql_max_count, hf_gql_max_count, hf_gql_window, max_arkive_storage, max_arkive_count, ${SUPABASE_TABLES.USER_PROFILE}!inner(id)`,
+			)
+			.eq(`${SUPABASE_TABLES.USER_PROFILE}.id`, userId)
+
+		if (error) {
+			throw error
+		}
+
+		if (data.length === 0) {
+			return null
+		}
+
+		const {
+			d_gql_max_count,
+			hf_gql_max_count,
+			hf_gql_window,
+			max_arkive_storage,
+			max_arkive_count,
+			user_profile,
+		} = data[0]
+
+		if (
+			!user_profile ||
+			(Array.isArray(user_profile) && user_profile.length === 0)
+		) {
+			return null
+		}
+
+		return {
+			max: d_gql_max_count,
+			hfMax: hf_gql_max_count,
+			hfWindow: hf_gql_window,
+			maxStorageBytes: max_arkive_storage,
+			maxArkiveCount: max_arkive_count,
+		}
+	}
+
+	async getTierLimits(tierInfoId: number): Promise<TierLimits | null> {
+		const { data, error } = await this.#supabase
+			.from(SUPABASE_TABLES.TIER_INFO)
+			.select(
+				`d_gql_max_count, hf_gql_max_count, hf_gql_window, max_arkive_storage, max_arkive_count`,
 			)
 			.eq('id', tierInfoId)
 
@@ -84,12 +133,20 @@ export class SupabaseAuthProvider implements ApiAuthProvider {
 			return null
 		}
 
-		const { d_gql_max_count, hf_gql_max_count, hf_gql_window } = data[0]
+		const {
+			d_gql_max_count,
+			hf_gql_max_count,
+			hf_gql_window,
+			max_arkive_count,
+			max_arkive_storage,
+		} = data[0]
 
 		return {
 			max: d_gql_max_count,
 			hfMax: hf_gql_max_count,
 			hfWindow: hf_gql_window,
+			maxStorageBytes: max_arkive_storage,
+			maxArkiveCount: max_arkive_count,
 		}
 	}
 
