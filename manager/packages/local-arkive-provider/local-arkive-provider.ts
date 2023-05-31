@@ -9,6 +9,9 @@ import { logger } from '../logger.ts'
 export class LocalArkiveProvider implements ArkiveProvider {
 	newArkiveHandler?: (arkive: arkiverTypes.Arkive) => Promise<void>
 	delArkiveHandler?: (arkiveId: { id: number }) => void
+	updateDeploymentHandler?: (
+		deployment: arkiverTypes.Arkive,
+	) => Promise<void> | void
 	currentId = 0
 	idToDeploymentId = new Map<number, number>()
 	nameToArkive = new Map<
@@ -174,6 +177,13 @@ export class LocalArkiveProvider implements ArkiveProvider {
 		callback: (arkiveId: { id: number }) => void,
 	): void {
 		this.delArkiveHandler = callback
+	}
+	listenUpdatedDeployment(
+		callback: (
+			deployment: arkiverTypes.Arkive,
+		) => void | Promise<void>,
+	): void {
+		this.updateDeploymentHandler = callback
 	}
 
 	async pullDeployment(_arkives: arkiverTypes.Arkive): Promise<void> {}

@@ -53,6 +53,7 @@ export class ArkiveManager {
 			const deployments = await this.arkiveProvider.getDeployments()
 			this.listenNewDeployments()
 			this.listenForDeletedArkives()
+			this.listenForUpdatedDeployments()
 			for (const deployment of deployments) {
 				await this.addNewDeployment(deployment)
 			}
@@ -95,6 +96,52 @@ export class ArkiveManager {
 			logger('manager').info('deleted arkives', id)
 		})
 		logger('manager').info('listening for deleted arkives')
+	}
+
+	private listenForUpdatedDeployments() {
+		this.arkiveProvider.listenUpdatedDeployment(async (arkive) => {
+			const status = arkive.deployment.status
+			switch (status) {
+				case 'paused': {
+					const currentDeployment = this.deployments.find(
+						(a) => a.arkive.deployment.id === arkive.deployment.id,
+					)
+					if (!currentDeployment) break
+					logger('manager').debug(
+						`pausing arkive ${arkive.id}@${arkive.deployment.major_version}.${arkive.deployment.minor_version}`,
+					)
+					this.removeArkive(currentDeployment, {
+						filter: true,
+						removeData: false,
+						updateStatus: false,
+					})
+					logger('manager').info(
+						`paused arkive ${arkive.id}@${arkive.deployment.major_version}.${arkive.deployment.minor_version}`,
+					)
+					break
+				}
+				case 'restarting': {
+					const currentDeployment = this.deployments.find(
+						(a) => a.arkive.deployment.id === arkive.deployment.id,
+					)
+
+					if (currentDeployment) {
+						this.removeArkive(currentDeployment, {
+							filter: true,
+							removeData: false,
+							updateStatus: false,
+						})
+					}
+
+					await this.addNewDeployment(arkive)
+					logger('manager').info(
+						`restarted arkive ${arkive.id}@${arkive.deployment.major_version}.${arkive.deployment.minor_version}`,
+					)
+					break
+				}
+			}
+		})
+		logger('manager').info('listening for updated deployments')
 	}
 
 	private async addNewDeployment(arkive: arkiverTypes.Arkive) {

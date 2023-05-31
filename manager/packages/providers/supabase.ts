@@ -13,6 +13,7 @@ export class SupabaseProvider implements ArkiveProvider {
 	private supabase: supabase.SupabaseClient
 	private newArkiveListener?: supabase.RealtimeChannel
 	private deletedArkiveListener?: supabase.RealtimeChannel
+	private updateDeploymentListener?: supabase.RealtimeChannel
 	private environment: string
 
 	constructor(
@@ -129,6 +130,50 @@ export class SupabaseProvider implements ArkiveProvider {
 		this.deletedArkiveListener = listener
 	}
 
+	public listenUpdatedDeployment(
+		callback: (
+			deployment: arkiverTypes.Arkive,
+		) => void | Promise<void>,
+	): void {
+		const listener = this.supabase
+			.channel('updated-deployment')
+			.on<arkiverTypes.Deployment>(
+				'postgres_changes',
+				{
+					event: 'UPDATE',
+					schema: 'public',
+					table: SUPABASE_TABLES.DEPLOYMENTS,
+				},
+				async (payload) => {
+					const { data, error: e } = await this.supabase.from(
+						SUPABASE_TABLES.ARKIVE,
+					)
+						.select<'*', Omit<arkiverTypes.Arkive, 'deployment'>>('*')
+						.eq('id', payload.new.arkive_id)
+						.eq('environment', this.environment)
+					if (e) {
+						const error = {
+							...e,
+							name: 'SupabaseProvider.listenUpdatedDeployment',
+						} satisfies Error
+						logger('manager').error(error, {
+							source: 'SupabaseProvider.listenUpdatedDeployment',
+						})
+						return
+					}
+					if (data.length === 0) return
+					const newArkive = {
+						...data[0],
+						deployment: payload.new,
+					}
+					await callback(newArkive)
+				},
+			)
+			.subscribe()
+
+		this.updateDeploymentListener = listener
+	}
+
 	public async pullDeployment(arkive: arkiverTypes.Arkive): Promise<void> {
 		const path = `${arkive.user_id}/${arkive.id}`
 		const version =
@@ -191,6 +236,9 @@ export class SupabaseProvider implements ArkiveProvider {
 		}
 		if (this.deletedArkiveListener) {
 			this.deletedArkiveListener.unsubscribe()
+		}
+		if (this.updateDeploymentListener) {
+			this.updateDeploymentListener.unsubscribe()
 		}
 		logger('manager').info('closed')
 	}

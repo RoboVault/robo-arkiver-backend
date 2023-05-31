@@ -15,10 +15,15 @@ export interface ArkiveProvider {
 	listenDeletedArkive(
 		callback: (arkiveId: { id: number }) => void,
 	): void
+	listenUpdatedDeployment(
+		callback: (
+			deployment: arkiverTypes.Arkive,
+		) => Promise<void> | void,
+	): void
 	pullDeployment(arkives: arkiverTypes.Arkive): Promise<void>
 	updateDeploymentStatus(
 		arkive: arkiverTypes.Arkive,
-		status: string,
+		status: arkiverTypes.Deployment['status'],
 	): Promise<void>
 	getUsername(userId: string): Promise<string>
 	close(): void
