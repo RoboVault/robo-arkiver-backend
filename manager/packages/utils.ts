@@ -34,9 +34,11 @@ export const unpack = async (path: string, target: string) => {
 	const command = new Deno.Command('tar', {
 		args: ['xzf', path, '-C', target],
 	})
-	const { success } = await command.output()
+	const { success, stderr } = await command.output()
 	if (!success) {
-		throw new Error(`Failed to unpack ${path}`)
+		throw new Error(
+			`Failed to unpack ${path} | ${new TextDecoder().decode(stderr)}`,
+		)
 	}
 }
 
