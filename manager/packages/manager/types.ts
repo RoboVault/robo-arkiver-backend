@@ -2,7 +2,7 @@ import { arkiverTypes } from '../../deps.ts'
 
 export type ArkiveMessageEvent =
 	| NewArkiveMessageEvent
-	| WorkerErrorEvent
+	| HandlerErrorEvent
 	| ArkiveSyncedEvent
 
 export interface NewArkiveMessageEvent {
@@ -14,8 +14,8 @@ export interface NewArkiveMessageEvent {
 	}
 }
 
-export interface WorkerErrorEvent {
-	topic: 'workerError'
+export interface HandlerErrorEvent {
+	topic: 'handlerError'
 	data: {
 		error: Error
 		arkive: arkiverTypes.Arkive

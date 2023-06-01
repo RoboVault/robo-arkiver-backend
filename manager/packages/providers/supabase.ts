@@ -36,7 +36,10 @@ export class SupabaseProvider implements ArkiveProvider {
 		const arkives: arkiverTypes.Arkive[] = arkivesRes.data.flatMap((arkive) => {
 			// get highest deployment minor_version(s)
 			const deployments = arkive.deployments.reduce((prev, curr) => {
-				if (curr.status === 'retired') {
+				if (
+					curr.status === 'retired' || curr.status === 'error' ||
+					curr.status === 'paused'
+				) {
 					return prev
 				}
 
@@ -45,10 +48,8 @@ export class SupabaseProvider implements ArkiveProvider {
 				if (
 					(!highestPrev || highestPrev.minor_version < curr.minor_version)
 				) {
-					return {
-						...prev,
-						[curr.major_version]: curr,
-					}
+					prev[curr.major_version] = curr
+					return prev
 				} else {
 					return prev
 				}

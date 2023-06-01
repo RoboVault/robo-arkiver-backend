@@ -108,6 +108,9 @@ self.onmessage = async (e: MessageEvent<ArkiveMessageEvent>) => {
 			instance.addEventListener('synced', () => {
 				self.postMessage({ topic: 'synced', data: { arkive } })
 			})
+			instance.addEventListener('handlerError', () => {
+				self.postMessage({ topic: 'handlerError', data: { arkive } })
+			})
 			await instance.run()
 			Deno.permissions.revoke({ name: 'env' })
 			break

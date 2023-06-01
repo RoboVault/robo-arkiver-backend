@@ -240,9 +240,18 @@ export class ArkiveManager {
 		)
 
 		worker.onmessage = async (e: MessageEvent<ArkiveMessageEvent>) => {
-			if (e.data.topic === 'workerError') {
-				logger('manager').error(e.data.data.error, {
-					source: 'worker-arkive-' + e.data.data.arkive.id,
+			if (e.data.topic === 'handlerError') {
+				logger('manager').error(
+					`Arkive worker handler error, stopping worker ...`,
+				)
+				this.arkiveProvider.updateDeploymentStatus(arkive, 'error')
+				this.removeArkive({
+					arkive,
+					worker,
+				}, {
+					filter: true,
+					removeData: false,
+					updateStatus: false,
 				})
 			} else if (e.data.topic === 'synced') {
 				logger('manager').info(
@@ -283,6 +292,17 @@ export class ArkiveManager {
 				source: 'worker-arkive-' + arkive.id,
 			})
 			e.preventDefault()
+			this.arkiveProvider.updateDeploymentStatus(arkive, 'error').catch((e) =>
+				logger('manager').error(e)
+			)
+			this.removeArkive({
+				arkive,
+				worker,
+			}, {
+				filter: true,
+				removeData: false,
+				updateStatus: false,
+			})
 		}
 		worker.postMessage({
 			topic: 'initArkive',
