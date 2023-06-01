@@ -1,3 +1,4 @@
+import 'https://deno.land/std@0.189.0/dotenv/load.ts'
 import { influx, log, redis } from '../../deps.ts'
 import { REDIS_KEYS } from '../constants.ts'
 import { logger } from '../logger.ts'
