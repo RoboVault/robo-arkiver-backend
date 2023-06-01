@@ -68,14 +68,21 @@ self.onmessage = async (e: MessageEvent<ArkiveMessageEvent>) => {
 				manifestExport = me
 			} catch (e) {
 				logger('arkiver').error(
-					`error importing manifest for ${arkive.id}: ${e.stack}`,
+					`error importing manifest for ${arkive.id}@${arkive.deployment.major_version}.${arkive.deployment.minor_version}: ${e.stack}`,
 				)
 				return
 			}
 			const manifest: arkiver.ArkiveManifest = manifestExport ?? manifestDefault
 			if (!manifest) {
 				logger('arkiver').error(
-					`manifest not found for ${arkive.id} at ${manifestPath}`,
+					`manifest not found for ${arkive.id}@${arkive.deployment.major_version}.${arkive.deployment.minor_version} at ${manifestPath}`,
+				)
+				return
+			}
+			const { problems } = arkiver.parseArkiveManifest.manifest(manifest)
+			if (problems) {
+				logger('arkiver').error(
+					`manifest for ${arkive.id}@${arkive.deployment.major_version}.${arkive.deployment.minor_version} has problems: ${problems}`,
 				)
 				return
 			}

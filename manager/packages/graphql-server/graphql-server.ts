@@ -100,6 +100,13 @@ export class GraphQLServer {
 			)
 			return
 		}
+		const { problems } = arkiver.parseArkiveManifest.manifest(manifest)
+		if (problems) {
+			logger('graphQLServer').error(
+				`[GraphQL Server] manifest for ${arkive.id}-${arkive.deployment.major_version}-${arkive.deployment.minor_version} has problems: ${problems}`,
+			)
+			return
+		}
 		const connection = mongoose.connections[0].useDb(
 			`${arkive.id}-${arkive.deployment.major_version}`,
 		)
