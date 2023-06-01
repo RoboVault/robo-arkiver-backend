@@ -31,11 +31,11 @@ export const getSupabaseClient = () => {
 }
 
 export const unpack = async (path: string, target: string) => {
-	const command = new Deno.Command(Deno.execPath(), {
-		args: ['tar', 'xzf', path, '-C', target],
+	const command = new Deno.Command('tar', {
+		args: ['xzf', path, '-C', target],
 	})
 	const { success } = await command.output()
-	if (success) {
+	if (!success) {
 		throw new Error(`Failed to unpack ${path}`)
 	}
 }
