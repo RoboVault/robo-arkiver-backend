@@ -1,9 +1,8 @@
 // deno-lint-ignore-file no-explicit-any
 import { SupabaseClient, z } from '../_shared/deps.ts'
-import { Arkive } from '../_shared/types.ts'
+import { Arkive, parseSerializedManifest } from '../_shared/types.ts'
 import { HttpError } from '../_shared/http_error.ts'
 import { SUPABASE_TABLES } from '../../../manager/packages/constants.ts'
-import { parseArkiveManifest } from '../../../../robo-arkiver/src/arkiver/manifest-validator.ts'
 
 export const postSchema = z.object({
 	name: z.string(),
@@ -21,12 +20,14 @@ export const post = async (
 	params: PostParams,
 ) => {
 	const { userId, name, pkg, isPublic, update, manifest, environment } = params
-	const parsedManifest = JSON.parse(manifest)
-	const { problems, data: validatedManifest } = parseArkiveManifest.manifest(
-		parsedManifest,
-	)
+	const serializedManifest = JSON.parse(manifest)
+	const { data: validatedManifest, problems } = parseSerializedManifest
+		.serializedManifest(
+			serializedManifest,
+		)
+
 	if (problems) {
-		throw new HttpError(400, `Bad Request: ${problems}`)
+		throw new HttpError(400, `Invalid manifest: ${problems}`)
 	}
 
 	// check if arkive already exists
