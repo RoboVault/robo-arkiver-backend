@@ -5,7 +5,7 @@ import { arkivesDir } from '../manager/manager.ts'
 import { logger } from '../logger.ts'
 import { SUPABASE_TABLES } from '../constants.ts'
 
-interface RawArkive extends Omit<arkiverTypes.Arkive, 'deployment'> {
+export interface RawArkive extends Omit<arkiverTypes.Arkive, 'deployment'> {
 	deployments: arkiverTypes.Deployment[]
 }
 
