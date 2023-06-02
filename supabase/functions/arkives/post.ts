@@ -3,6 +3,7 @@ import { SupabaseClient, z } from '../_shared/deps.ts'
 import { Arkive } from '../_shared/types.ts'
 import { HttpError } from '../_shared/http_error.ts'
 import { SUPABASE_TABLES } from '../../../manager/packages/constants.ts'
+import { parseArkiveManifest } from '../../../../robo-arkiver/src/arkiver/manifest-validator.ts'
 
 export const postSchema = z.object({
 	name: z.string(),
@@ -21,6 +22,12 @@ export const post = async (
 ) => {
 	const { userId, name, pkg, isPublic, update, manifest, environment } = params
 	const parsedManifest = JSON.parse(manifest)
+	const { problems, data: validatedManifest } = parseArkiveManifest.manifest(
+		parsedManifest,
+	)
+	if (problems) {
+		throw new HttpError(400, `Bad Request: ${problems}`)
+	}
 
 	// check if arkive already exists
 	const selectRes = await supabase
@@ -51,7 +58,7 @@ export const post = async (
 				pkg,
 				userId,
 				update,
-				manifest: parsedManifest,
+				manifest: validatedManifest,
 				environment,
 			},
 		)
@@ -63,7 +70,7 @@ export const post = async (
 				name,
 				pkg,
 				isPublic,
-				manifest: parsedManifest,
+				manifest: validatedManifest,
 				environment,
 			},
 		)
