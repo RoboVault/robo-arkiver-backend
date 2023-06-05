@@ -23,7 +23,7 @@ export class SupabaseProvider implements ArkiveProvider {
 		this.environment = params.environment
 	}
 
-	public async getDeployments(): Promise<arkiverTypes.Arkive[]> {
+	public async getLatestActiveDeployments(): Promise<arkiverTypes.Arkive[]> {
 		const arkivesRes = await this.supabase
 			.from(SUPABASE_TABLES.ARKIVE)
 			.select<'*, deployments(*)', RawArkive>('*, deployments(*)')
@@ -231,7 +231,7 @@ export class SupabaseProvider implements ArkiveProvider {
 		return data.username
 	}
 
-	public close(): void {
+	public cleanUp(): void {
 		if (this.newArkiveListener) {
 			this.newArkiveListener.unsubscribe()
 		}

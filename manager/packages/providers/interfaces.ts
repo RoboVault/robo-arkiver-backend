@@ -8,12 +8,12 @@ export interface IndexedBlockHeightParams {
 }
 
 export interface ArkiveProvider {
-	getDeployments(): Promise<arkiverTypes.Arkive[]>
+	getLatestActiveDeployments(): Promise<arkiverTypes.Arkive[]>
 	listenNewDeployment(
-		callback: (arkive: arkiverTypes.Arkive) => Promise<void>,
+		callback: (arkive: arkiverTypes.Arkive) => Promise<void> | void,
 	): void
 	listenDeletedArkive(
-		callback: (arkiveId: { id: number }) => void,
+		callback: (arkiveId: { id: number }) => void | Promise<void>,
 	): void
 	listenUpdatedDeployment(
 		callback: (
@@ -26,7 +26,16 @@ export interface ArkiveProvider {
 		status: arkiverTypes.Deployment['status'],
 	): Promise<void>
 	getUsername(userId: string): Promise<string>
-	close(): void
+	cleanUp(): Promise<void> | void
+}
+
+export interface ArkiveActor {
+	run(): Promise<void> | void
+	addDeployment(arkive: arkiverTypes.Arkive): Promise<void> | void
+	newDeploymentHandler(arkive: arkiverTypes.Arkive): Promise<void> | void
+	deletedArkiveHandler(arkiveId: { id: number }): Promise<void> | void
+	updatedDeploymentHandler(arkive: arkiverTypes.Arkive): Promise<void> | void
+	cleanUp(): Promise<void> | void
 }
 
 export interface ApiAuthProvider {

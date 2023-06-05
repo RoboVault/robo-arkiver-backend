@@ -165,7 +165,7 @@ export class LocalArkiveProvider implements ArkiveProvider {
 		return new Response('Invalid request', { status: 400 })
 	}
 
-	getDeployments(): Promise<arkiverTypes.Arkive[]> {
+	getLatestActiveDeployments(): Promise<arkiverTypes.Arkive[]> {
 		return Promise.resolve([])
 	}
 	listenNewDeployment(
@@ -206,5 +206,6 @@ export class LocalArkiveProvider implements ArkiveProvider {
 		return Promise.resolve(userId)
 	}
 
-	close(): void {}
+	cleanUp() {
+	}
 }
