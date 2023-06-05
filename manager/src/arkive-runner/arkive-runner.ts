@@ -1,5 +1,5 @@
 import { Arkive } from '../../../../robo-arkiver/src/arkiver/types.ts'
-import { logger } from '../logger.ts'
+import { logger } from '../logger/logger.ts'
 import { ArkiveMessageEvent, NewArkiveMessageEvent } from '../manager/types.ts'
 import { ArkiveActor, ArkiveProvider } from '../providers/interfaces.ts'
 import { collectRpcUrls, getEnv } from '../utils.ts'

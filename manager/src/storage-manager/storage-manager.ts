@@ -7,10 +7,10 @@ import {
 } from '../providers/interfaces.ts'
 import { MongoDataProvider } from '../providers/mongodb.ts'
 import { getEnv, getSupabaseClient } from '../utils.ts'
-import { logger } from '../logger.ts'
+import { logger } from '../logger/logger.ts'
 import { SupabaseProvider } from '../providers/supabase.ts'
 import { SupabaseAuthProvider } from '../providers/supabase-auth.ts'
-import { ArkiveInfluxLogger } from '../manager/logger.ts'
+import { ArkiveInfluxLogger } from '../logger/influx.ts'
 
 export class StorageManager {
 	#dataProvider: DataProvider

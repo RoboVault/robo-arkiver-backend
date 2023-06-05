@@ -10,7 +10,7 @@ import {
 	supabase,
 } from '../../deps.ts'
 import { ERROR_CODES } from '../constants.ts'
-import { logger } from '../logger.ts'
+import { logger } from '../logger/logger.ts'
 import { getEnv } from '../utils.ts'
 import { arkivesDir } from '../manager/manager.ts'
 import { apiKeyLimiter, createIpLimiter } from './rate-limiter.ts'

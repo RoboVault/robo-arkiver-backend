@@ -1,5 +1,5 @@
 import { arkiverTypes, mongoose } from '../../deps.ts'
-import { logger } from '../logger.ts'
+import { logger } from '../logger/logger.ts'
 import { DataProvider } from './interfaces.ts'
 
 export class MongoDataProvider implements DataProvider {

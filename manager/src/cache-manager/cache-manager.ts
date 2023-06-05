@@ -1,8 +1,8 @@
 import 'https://deno.land/std@0.189.0/dotenv/load.ts'
 import { influx, log, redis } from '../../deps.ts'
 import { REDIS_KEYS } from '../constants.ts'
-import { logger } from '../logger.ts'
-import { ArkiveInfluxLogger } from '../manager/logger.ts'
+import { logger } from '../logger/logger.ts'
+import { ArkiveInfluxLogger } from '../logger/influx.ts'
 import { ApiAuthProvider } from '../providers/interfaces.ts'
 import {
 	SupabaseAuthProvider,

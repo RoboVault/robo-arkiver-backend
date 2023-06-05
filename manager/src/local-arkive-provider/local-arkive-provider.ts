@@ -4,7 +4,7 @@ import { join } from 'https://deno.land/std@0.183.0/path/mod.ts'
 import { arkiverTypes } from '../../deps.ts'
 import { ArkiveProvider } from '../providers/interfaces.ts'
 import { arkivesDir } from '../manager/manager.ts'
-import { logger } from '../logger.ts'
+import { logger } from '../logger/logger.ts'
 
 export class LocalArkiveProvider implements ArkiveProvider {
 	newArkiveHandler?: (arkive: arkiverTypes.Arkive) => Promise<void>

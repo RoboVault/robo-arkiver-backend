@@ -1,6 +1,6 @@
 import { ArkiveActor, ArkiveProvider } from '../providers/interfaces.ts'
 import { arkiverTypes } from '../../deps.ts'
-import { logger } from '../logger.ts'
+import { logger } from '../logger/logger.ts'
 
 export const arkivesDir = '../../arkives'
 

@@ -2,7 +2,7 @@ import { ArkiveProvider } from './interfaces.ts'
 import { arkiverTypes, path as denoPath, supabase } from '../../deps.ts'
 import { rm, unpack } from '../utils.ts'
 import { arkivesDir } from '../manager/manager.ts'
-import { logger } from '../logger.ts'
+import { logger } from '../logger/logger.ts'
 import { SUPABASE_TABLES } from '../constants.ts'
 
 export interface RawArkive extends Omit<arkiverTypes.Arkive, 'deployment'> {

@@ -1,8 +1,9 @@
 import { ArkiveMessageEvent } from '../manager/types.ts'
 import { arkiver, influx, log, path as denoPath } from '../../deps.ts'
-import { logger } from '../logger.ts'
-import { ArkiveInfluxLogger } from '../manager/logger.ts'
-import { createManifestHandlers, getEnv } from '../utils.ts'
+import { logger } from '../logger/logger.ts'
+import { ArkiveInfluxLogger } from '../logger/influx.ts'
+import { getEnv } from '../utils.ts'
+import { createManifestHandlers } from '../logger/utils.ts'
 import { arkivesDir } from '../manager/manager.ts'
 
 declare const self: Worker

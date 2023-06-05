@@ -1,6 +1,7 @@
 {
 	"tasks": {
-		"dev": "deno run -A --watch --unstable main.ts"
+		"graphql": "MODULE=GRAPHQL_SERVER deno run -A --unstable main.ts",
+		"runner": "MODULE=ARKIVE_RUNNER deno run -A --unstable main.ts"
 	},
 	"imports": {
 		"https://deno.land/x/robo_arkiver@v0.3.6/": "https://deno.land/x/robo_arkiver/",
