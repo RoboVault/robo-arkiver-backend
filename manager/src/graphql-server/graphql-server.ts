@@ -53,6 +53,9 @@ export class GraphQLServer implements ArkiveActor {
 			port: Number(getEnv('REDIS_PORT')),
 		})
 		logger('graphql-server').info('[GraphQL Server] Connected to Redis')
+		logger('graphql-server').info('[GraphQL Server] Connecting to MongoDB')
+		await mongoose.connect(getEnv('MONGO_CONNECTION'))
+		logger('graphql-server').info('[GraphQL Server] Connected to MongoDB')
 
 		http.serve(
 			async (req, connInfo) => await this.handleRequest(req, connInfo),
