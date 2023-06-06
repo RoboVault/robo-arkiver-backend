@@ -1,11 +1,12 @@
-import { Arkive } from '../../../../robo-arkiver/src/arkiver/types.ts'
+
+import { arkiverTypes } from '../../deps.ts'
 import { logger } from '../logger/logger.ts'
 import { ArkiveMessageEvent, NewArkiveMessageEvent } from '../manager/types.ts'
 import { ArkiveActor, ArkiveProvider } from '../providers/interfaces.ts'
 import { collectRpcUrls, getEnv } from '../utils.ts'
 
 export class ArkiveRunner implements ArkiveActor {
-	#deployments: { arkive: Arkive; worker: Worker }[] = []
+	#deployments: { arkive: arkiverTypes.Arkive; worker: Worker }[] = []
 	#arkiveProvider: ArkiveProvider
 	#rpcUrls: Record<string, string>
 
@@ -14,9 +15,9 @@ export class ArkiveRunner implements ArkiveActor {
 		this.#rpcUrls = collectRpcUrls()
 	}
 
-	async run() {}
+	async run() { }
 
-	async addDeployment(arkive: Arkive) {
+	async addDeployment(arkive: arkiverTypes.Arkive) {
 		await this.#arkiveProvider.pullDeployment(arkive)
 
 		const worker = this.spawnArkiverWorker(arkive)
@@ -39,14 +40,14 @@ export class ArkiveRunner implements ArkiveActor {
 		)
 	}
 
-	async newDeploymentHandler(deployment: Arkive) {
+	async newDeploymentHandler(deployment: arkiverTypes.Arkive) {
 		// only remove previous versions if on the same major version.
 		// old major versions will be removed once the new version is synced
 		const previousDeployments = this.getPreviousDeployments(deployment)
 		const sameMajor = previousDeployments.filter(
 			(a) =>
 				a.arkive.deployment.major_version ===
-					deployment.deployment.major_version,
+				deployment.deployment.major_version,
 		)
 		// remove old minor versions
 		for (const deployment of sameMajor) {
@@ -62,7 +63,7 @@ export class ArkiveRunner implements ArkiveActor {
 		await this.addDeployment(deployment)
 	}
 
-	async updatedDeploymentHandler(deployment: Arkive) {
+	async updatedDeploymentHandler(deployment: arkiverTypes.Arkive) {
 		switch (deployment.deployment.status) {
 			case 'paused': {
 				const currentDeployment = this.#deployments.find(
@@ -96,7 +97,7 @@ export class ArkiveRunner implements ArkiveActor {
 		}
 	}
 
-	spawnArkiverWorker(arkive: Arkive) {
+	spawnArkiverWorker(arkive: arkiverTypes.Arkive) {
 		const worker = new Worker(
 			new URL('./worker.ts', import.meta.url),
 			{
@@ -140,7 +141,7 @@ export class ArkiveRunner implements ArkiveActor {
 						// check if previous version is an older major version
 						if (
 							previousVersion.arkive.deployment.major_version <
-								arkive.deployment.major_version
+							arkive.deployment.major_version
 						) {
 							logger('arkive-runner').info(
 								'removing old major version',
@@ -188,7 +189,7 @@ export class ArkiveRunner implements ArkiveActor {
 		return worker
 	}
 
-	removeDeployment(deployment: { arkive: Arkive; worker: Worker }) {
+	removeDeployment(deployment: { arkive: arkiverTypes.Arkive; worker: Worker }) {
 		logger('arkive-runner').info('Removing deployment', deployment)
 
 		deployment.worker.terminate()
@@ -197,7 +198,7 @@ export class ArkiveRunner implements ArkiveActor {
 		)
 	}
 
-	getPreviousDeployments(deployment: Arkive) {
+	getPreviousDeployments(deployment: arkiverTypes.Arkive) {
 		return this.#deployments.filter(
 			(a) =>
 				a.arkive.id === deployment.id &&
@@ -205,9 +206,9 @@ export class ArkiveRunner implements ArkiveActor {
 					(a.arkive.deployment.major_version <
 						deployment.deployment.major_version) ||
 					(a.arkive.deployment.major_version === // same major version but older minor version
-							deployment.deployment.major_version &&
+						deployment.deployment.major_version &&
 						a.arkive.deployment.minor_version <
-							deployment.deployment.minor_version)
+						deployment.deployment.minor_version)
 				),
 		)
 	}

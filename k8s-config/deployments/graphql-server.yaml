@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: arkiver-graphql-server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: arkiver-graphql-server
+  template:
+    metadata:
+      labels:
+        app: arkiver-graphql-server
+    spec:
+      containers:
+      - name: arkiver-graphql-server
+        image: arkiver-graphql-server
+        imagePullPolicy: Never
+        env:
+        - name: SUPABASE_SERVICE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: env-secrets
+              key: SUPABASE_SERVICE_KEY
+        - name: MONGO_CONNECTION
+          valueFrom:
+            secretKeyRef:
+              name: env-secrets
+              key: MONGO_CONNECTION
+        - name: INFLUX_URL
+          valueFrom:
+            secretKeyRef:
+              name: env-secrets
+              key: INFLUX_URL
+        - name: INFLUX_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: env-secrets
+              key: INFLUX_TOKEN
+        - name: INFLUX_ORG
+          valueFrom:
+            secretKeyRef:
+              name: env-secrets
+              key: INFLUX_ORG
+        - name: INFLUX_BUCKET
+          valueFrom:
+            secretKeyRef:
+              name: env-secrets
+              key: INFLUX_BUCKET
+        - name: REDIS_HOSTNAME
+          valueFrom:
+            configMapKeyRef:
+              name: env-config
+              key: REDIS_HOSTNAME
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: env-config
+              key: REDIS_PORT
