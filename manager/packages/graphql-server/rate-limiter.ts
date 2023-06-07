@@ -62,7 +62,7 @@ export const apiKeyLimiter = async (
 	pl.get(apiKey)
 	pl.get(countRedisKey)
 	pl.hgetall(limitRedisKey)
-	const [cachedUsername, count, limits] = await pl.flush()
+	const [cachedUsername, count, limits] = await pl.exec()
 
 	if (!cachedUsername || cachedUsername !== username) {
 		if (!(await apiAuthProvider.validateApiKey(apiKey, username))) {
