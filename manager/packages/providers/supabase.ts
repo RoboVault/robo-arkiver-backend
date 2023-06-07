@@ -37,7 +37,7 @@ export class SupabaseProvider implements ArkiveProvider {
 			// get highest deployment minor_version(s)
 			const deployments = arkive.deployments.reduce((prev, curr) => {
 				if (
-					curr.status === 'retired' || curr.status === 'error' ||
+					curr.status === 'retired' || // curr.status === 'error' ||
 					curr.status === 'paused'
 				) {
 					return prev
