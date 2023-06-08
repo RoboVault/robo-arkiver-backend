@@ -4,6 +4,13 @@ export const REDIS_KEYS = {
 	API_RATELIMITER: 'api-ratelimiter',
 } as const
 
+export const MESSENGER_REDIS_KEYS = {
+	ACTIVE_DEPLOYMENTS: 'active-deployments',
+	NEW_DEPLOYMENTS: 'new-deployments',
+	DELETED_DEPLOYMENTS: 'deleted-deployments',
+	ARKIVE_RUNNERS_GROUP: 'arkive-runners',
+} as const
+
 export const SUPABASE_TABLES = {
 	USER_PROFILE: 'user_profile',
 	ARKIVE: 'arkive',

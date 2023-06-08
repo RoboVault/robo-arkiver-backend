@@ -3,5 +3,7 @@ kind: ConfigMap
 metadata:
   name: env-config
 data:
-  REDIS_HOSTNAME: "redis-graphql-server"
-  REDIS_PORT: "6379"
+  SERVER_REDIS_HOSTNAME: "redis-graphql-server"
+  SERVER_REDIS_PORT: "6379"
+  MESSENGER_REDIS_HOSTNAME: "redis-messenger"
+  MESSENGER_REDIS_PORT: "6379"

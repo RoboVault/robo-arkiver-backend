@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: arkiver-graphql-server
+  name: messenger
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
-      app: arkiver-graphql-server
+      app: messenger
   template:
     metadata:
       labels:
-        app: arkiver-graphql-server
+        app: messenger
     spec:
       containers:
-      - name: arkiver-graphql-server
-        image: arkiver-graphql-server
+      - name: messenger
+        image: messenger
         imagePullPolicy: Never
         env:
         - name: SUPABASE_SERVICE_KEY
@@ -22,11 +22,6 @@ spec:
             secretKeyRef:
               name: env-secrets
               key: SUPABASE_SERVICE_KEY
-        - name: MONGO_CONNECTION
-          valueFrom:
-            secretKeyRef:
-              name: env-secrets
-              key: MONGO_CONNECTION
         - name: INFLUX_URL
           valueFrom:
             secretKeyRef:
@@ -47,13 +42,13 @@ spec:
             secretKeyRef:
               name: env-secrets
               key: INFLUX_BUCKET
-        - name: SERVER_REDIS_HOSTNAME
+        - name: MESSENGER_REDIS_HOSTNAME
           valueFrom:
             configMapKeyRef:
               name: env-config
-              key: SERVER_REDIS_HOSTNAME
-        - name: SERVER_REDIS_PORT
+              key: MESSENGER_REDIS_HOSTNAME
+        - name: MESSENGER_REDIS_PORT
           valueFrom:
             configMapKeyRef:
               name: env-config
-              key: SERVER_REDIS_PORT
+              key: MESSENGER_REDIS_PORT

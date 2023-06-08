@@ -1,6 +1,7 @@
 import { ArkiveActor, ArkiveProvider } from '../providers/interfaces.ts'
 import { arkiverTypes } from '../../deps.ts'
 import { logger } from '../logger/logger.ts'
+import { RawArkive } from '../providers/supabase.ts'
 
 export const arkivesDir = '../../arkives'
 
@@ -24,13 +25,11 @@ export class ArkiveManager {
 	public async init() {
 		try {
 			await Promise.all(this.actors.map((a) => a.run()))
-			const deployments = await this.arkiveProvider.getLatestActiveDeployments()
+			const rawArkives = await this.arkiveProvider.getRawArkives()
 			this.listenForNewDeployments()
-			this.listenForDeletedArkives()
+			this.listenforDeletedDeployments()
 			this.listenForUpdatedDeployments()
-			for (const deployment of deployments) {
-				await this.addDeployment(deployment)
-			}
+			await this.initializeRawArkives(rawArkives)
 		} catch (e) {
 			logger(this.name).error(e, { source: 'ArkiveManager.init' })
 		}
@@ -39,7 +38,7 @@ export class ArkiveManager {
 	private listenForNewDeployments() {
 		this.arkiveProvider.listenNewDeployment(
 			async (deployment: arkiverTypes.Arkive) => {
-				logger(this.name).info('New deployment: ', deployment)
+				logger(this.name).info(`New deployment: ${deployment}`)
 				try {
 					await Promise.all(
 						this.actors.map((a) => a.newDeploymentHandler(deployment)),
@@ -54,16 +53,16 @@ export class ArkiveManager {
 		logger(this.name).info('listening for new deployments')
 	}
 
-	private listenForDeletedArkives() {
-		this.arkiveProvider.listenDeletedArkive(async ({ id }) => {
-			logger(this.name).info('Deleted arkive: ', id)
+	private listenforDeletedDeployments() {
+		this.arkiveProvider.listenDeletedDeployment(async (deploymentId) => {
+			logger(this.name).info('Deleted deployment: ', deploymentId)
 			try {
 				await Promise.all(
-					this.actors.map((actor) => actor.deletedArkiveHandler({ id })),
+					this.actors.map((actor) => actor.deletedDeploymentHandler(deploymentId)),
 				)
 			} catch (e) {
 				logger(this.name).error(e, {
-					source: 'ArkiveManager.listenForDeletedArkives',
+					source: 'ArkiveManager.listenforDeletedDeployments',
 				})
 			}
 		})
@@ -86,13 +85,13 @@ export class ArkiveManager {
 		logger(this.name).info('listening for updated deployments')
 	}
 
-	private async addDeployment(arkive: arkiverTypes.Arkive) {
-		logger(this.name).info('Adding deployment', arkive)
+	private async initializeRawArkives(rawArkives: RawArkive[]) {
+		logger(this.name).info('Initializing raw arkives', rawArkives)
 		try {
-			await Promise.all(this.actors.map((a) => a.addDeployment(arkive)))
+			await Promise.all(this.actors.map((a) => a.initializeDeployments(rawArkives)))
 		} catch (e) {
 			logger(this.name).error(e, {
-				source: 'ArkiveManager.addDeployment',
+				source: 'ArkiveManager.initializeRawArkives',
 			})
 		}
 	}

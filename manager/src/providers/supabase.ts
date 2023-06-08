@@ -9,21 +9,23 @@ export interface RawArkive extends Omit<arkiverTypes.Arkive, 'deployment'> {
 	deployments: arkiverTypes.Deployment[]
 }
 
+export interface SupabaseProviderParams { environment: string; supabase: supabase.SupabaseClient }
+
 export class SupabaseProvider implements ArkiveProvider {
-	private supabase: supabase.SupabaseClient
+	protected supabase: supabase.SupabaseClient
 	private newArkiveListener?: supabase.RealtimeChannel
-	private deletedArkiveListener?: supabase.RealtimeChannel
+	private deletedDeploymentListener?: supabase.RealtimeChannel
 	private updateDeploymentListener?: supabase.RealtimeChannel
 	private environment: string
 
 	constructor(
-		params: { environment: string; supabase: supabase.SupabaseClient },
+		params: SupabaseProviderParams,
 	) {
 		this.supabase = params.supabase
 		this.environment = params.environment
 	}
 
-	public async getLatestActiveDeployments(): Promise<arkiverTypes.Arkive[]> {
+	public async getRawArkives() {
 		const arkivesRes = await this.supabase
 			.from(SUPABASE_TABLES.ARKIVE)
 			.select<'*, deployments(*)', RawArkive>('*, deployments(*)')
@@ -33,39 +35,7 @@ export class SupabaseProvider implements ArkiveProvider {
 			throw arkivesRes.error
 		}
 
-		const arkives: arkiverTypes.Arkive[] = arkivesRes.data.flatMap((arkive) => {
-			// get highest deployment minor_version(s)
-			const deployments = arkive.deployments.reduce((prev, curr) => {
-				if (
-					curr.status === 'retired' || curr.status === 'error' ||
-					curr.status === 'paused'
-				) {
-					return prev
-				}
-
-				const highestPrev = prev[curr.major_version]
-
-				if (
-					(!highestPrev || highestPrev.minor_version < curr.minor_version)
-				) {
-					prev[curr.major_version] = curr
-					return prev
-				} else {
-					return prev
-				}
-			}, {} as Record<number, arkiverTypes.Deployment>)
-
-			return Object.values(deployments).map((deployment) => ({
-				id: arkive.id,
-				name: arkive.name,
-				user_id: arkive.user_id,
-				public: arkive.public,
-				created_at: arkive.created_at,
-				deployment,
-			}))
-		})
-
-		return arkives
+		return arkivesRes.data
 	}
 
 	public listenNewDeployment(
@@ -110,25 +80,25 @@ export class SupabaseProvider implements ArkiveProvider {
 		this.newArkiveListener = listener
 	}
 
-	public listenDeletedArkive(
-		callback: (arkiveId: { id: number }) => void,
+	public listenDeletedDeployment(
+		callback: (deploymentId: number) => void,
 	): void {
 		const listener = this.supabase
 			.channel('deleted-arkives')
-			.on<arkiverTypes.Arkive>(
+			.on<arkiverTypes.Deployment>(
 				'postgres_changes',
 				{
 					event: 'DELETE',
 					schema: 'public',
-					table: SUPABASE_TABLES.ARKIVE,
+					table: SUPABASE_TABLES.DEPLOYMENTS,
 				},
 				(payload) => {
-					callback(payload.old as { id: number })
+					callback(payload.old.id!)
 				},
 			)
 			.subscribe()
 
-		this.deletedArkiveListener = listener
+		this.deletedDeploymentListener = listener
 	}
 
 	public listenUpdatedDeployment(
@@ -235,8 +205,8 @@ export class SupabaseProvider implements ArkiveProvider {
 		if (this.newArkiveListener) {
 			this.newArkiveListener.unsubscribe()
 		}
-		if (this.deletedArkiveListener) {
-			this.deletedArkiveListener.unsubscribe()
+		if (this.deletedDeploymentListener) {
+			this.deletedDeploymentListener.unsubscribe()
 		}
 		if (this.updateDeploymentListener) {
 			this.updateDeploymentListener.unsubscribe()

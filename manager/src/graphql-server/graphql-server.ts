@@ -11,7 +11,7 @@ import {
 } from '../../deps.ts'
 import { ERROR_CODES } from '../constants.ts'
 import { logger } from '../logger/logger.ts'
-import { getEnv } from '../utils.ts'
+import { filterRawArkives, getEnv } from '../utils.ts'
 import { arkivesDir } from '../manager/manager.ts'
 import { apiKeyLimiter, createIpLimiter } from './rate-limiter.ts'
 import {
@@ -20,7 +20,7 @@ import {
 	ArkiveProvider,
 } from '../providers/interfaces.ts'
 import { SupabaseAuthProvider } from '../providers/supabase-auth.ts'
-import { SupabaseProvider } from '../providers/supabase.ts'
+import { RawArkive, SupabaseProvider } from '../providers/supabase.ts'
 
 export class GraphQLServer implements ArkiveActor {
 	private pathToYoga: Map<
@@ -49,8 +49,8 @@ export class GraphQLServer implements ArkiveActor {
 	async run() {
 		logger('graphql-server').info('[GraphQL Server] Connecting to Redis')
 		this.redis = await redis.connect({
-			hostname: getEnv('REDIS_HOSTNAME'),
-			port: Number(getEnv('REDIS_PORT')),
+			hostname: getEnv('SERVER_REDIS_HOSTNAME'),
+			port: Number(getEnv('SERVER_REDIS_PORT')),
 		})
 		logger('graphql-server').info('[GraphQL Server] Connected to Redis')
 		logger('graphql-server').info('[GraphQL Server] Connecting to MongoDB')
@@ -70,6 +70,15 @@ export class GraphQLServer implements ArkiveActor {
 		)
 	}
 
+	async initializeDeployments(rawArkives: RawArkive[]) {
+		const deployments = filterRawArkives(rawArkives, ['retired'])
+		await Promise.all(
+			deployments.map((arkive) =>
+				this.addDeployment(arkive)
+			),
+		)
+	}
+
 	async newDeploymentHandler(
 		arkive: arkiverTypes.Arkive,
 	): Promise<void> {
@@ -82,9 +91,9 @@ export class GraphQLServer implements ArkiveActor {
 		}
 	}
 
-	deletedArkiveHandler(arkiveId: { id: number }) {
+	deletedDeploymentHandler(deploymentId: number) {
 		for (const [path, { arkive }] of this.pathToYoga.entries()) {
-			if (arkive.id == arkiveId.id) {
+			if (arkive.deployment.id == deploymentId) {
 				logger('graphql-server').info(
 					`[GraphQL Server] Removing arkive: ${path}`,
 				)

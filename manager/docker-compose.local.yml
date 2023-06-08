@@ -10,8 +10,18 @@ services:
     image: influxdb
     ports:
       - 8086:8086
-      
-  redis:
+
+  messenger-redis:
     image: redis:latest
     ports:
       - "6379:6379"
+
+  server-redis:
+    image: redis:latest
+    ports:
+      - "6378:6379"
+
+  redis-insight:
+    image: redislabs/redisinsight:latest
+    ports:
+      - "8001:8001"

@@ -1,4 +1,5 @@
-import { arkiver, influx, supabase } from '../deps.ts'
+import { arkiver, arkiverTypes, influx, supabase } from '../deps.ts'
+import { RawArkive } from './providers/supabase.ts'
 
 export const getEnv = (key: string, defaultValue?: string): string => {
 	const value = Deno.env.get(key)
@@ -61,4 +62,38 @@ export const getInfluxWriter = () => {
 		url: getEnv('INFLUX_URL'),
 		token: getEnv('INFLUX_TOKEN'),
 	}).getWriteApi(getEnv('INFLUX_ORG'), getEnv('INFLUX_BUCKET'))
+}
+
+export const filterRawArkives = (arkives: RawArkive[], filterStatuses: arkiverTypes.Deployment['status'][]) => {
+	const res: arkiverTypes.Arkive[] = arkives.flatMap((arkive) => {
+		// get highest deployment minor_version(s)
+		const deployments = arkive.deployments.reduce((prev, curr) => {
+			if (
+				filterStatuses.includes(curr.status)
+			) {
+				return prev
+			}
+
+			const highestPrev = prev[curr.major_version]
+
+			if (
+				(!highestPrev || highestPrev.minor_version < curr.minor_version)
+			) {
+				prev[curr.major_version] = curr
+				return prev
+			} else {
+				return prev
+			}
+		}, {} as Record<number, arkiverTypes.Deployment>)
+
+		return Object.values(deployments).map((deployment) => ({
+			id: arkive.id,
+			name: arkive.name,
+			user_id: arkive.user_id,
+			public: arkive.public,
+			created_at: arkive.created_at,
+			deployment,
+		}))
+	})
+	return res
 }

@@ -1,42 +1,81 @@
 
-import { arkiverTypes } from '../../deps.ts'
+import { arkiverTypes, mongoose, redis } from '../../deps.ts'
+import { MESSENGER_REDIS_KEYS } from '../constants.ts'
 import { logger } from '../logger/logger.ts'
 import { ArkiveMessageEvent, NewArkiveMessageEvent } from '../manager/types.ts'
 import { ArkiveActor, ArkiveProvider } from '../providers/interfaces.ts'
-import { collectRpcUrls, getEnv } from '../utils.ts'
+import { RawArkive } from '../providers/supabase.ts'
+import { collectRpcUrls, filterRawArkives, getEnv } from '../utils.ts'
 
 export class ArkiveRunner implements ArkiveActor {
 	#deployments: { arkive: arkiverTypes.Arkive; worker: Worker }[] = []
 	#arkiveProvider: ArkiveProvider
 	#rpcUrls: Record<string, string>
+	#redis: redis.Redis
+	#hostname: string
 
-	constructor(params: { arkiveProvider: ArkiveProvider }) {
+	constructor(params: { arkiveProvider: ArkiveProvider, redis: redis.Redis }) {
 		this.#arkiveProvider = params.arkiveProvider
 		this.#rpcUrls = collectRpcUrls()
+		this.#redis = params.redis
+		this.#hostname = Deno.hostname()
 	}
 
-	async run() { }
+	async run() {
+		logger('arkive-runner').debug('Connecting to MongoDB')
+		await mongoose.connect(getEnv('MONGO_CONNECTION'))
+		logger('arkive-runner').debug('Connected to MongoDB')
+	}
+
+	async initializeDeployments(rawArkives: RawArkive[]) {
+		const deployments = filterRawArkives(rawArkives, [
+			'error', 'paused', 'retired',
+		])
+		await Promise.all(
+			deployments.map((deployment) => this.addDeployment(deployment)),
+		)
+
+		const toDelete = rawArkives.flatMap(
+			(a) => a.deployments.filter(
+				(d) => ['error', 'paused', 'retired'].includes(d.status))
+		)
+
+		await Promise.all(toDelete.map((deployment) => {
+			this.#redis.srem(`${MESSENGER_REDIS_KEYS.ACTIVE_DEPLOYMENTS}:${this.#hostname}`, deployment.id)
+		}))
+	}
 
 	async addDeployment(arkive: arkiverTypes.Arkive) {
+		logger('arkive-runner').info(
+			`adding deployment ${arkive.deployment.id}`,
+		)
 		await this.#arkiveProvider.pullDeployment(arkive)
 
 		const worker = this.spawnArkiverWorker(arkive)
-		await this.#arkiveProvider.updateDeploymentStatus(arkive, 'syncing')
+		this.#arkiveProvider.updateDeploymentStatus(arkive, 'syncing').catch((e) =>
+			logger('arkive-runner').error(e, {
+				source: 'ArkiveRunner.addDeployment',
+			}))
+		this.#redis.sadd(`${MESSENGER_REDIS_KEYS.ACTIVE_DEPLOYMENTS}:${this.#hostname}`, arkive.deployment.id).catch((e) => {
+			logger('arkive-runner').error(e, {
+				source: 'ArkiveRunner.addDeployment',
+			})
+		})
 		this.#deployments.push({ arkive, worker })
 	}
 
-	deletedArkiveHandler(arkiveId: { id: number }) {
+	deletedDeploymentHandler(deploymentId: number) {
 		const deployments = this.#deployments.filter(
-			(a) => a.arkive.id === arkiveId.id,
+			(a) => a.arkive.deployment.id === deploymentId,
 		)
 		for (const deployment of deployments) {
 			this.removeDeployment(deployment)
 		}
 		this.#deployments = this.#deployments.filter(
-			(a) => a.arkive.id !== arkiveId.id,
+			(a) => a.arkive.deployment.id !== deploymentId,
 		)
 		logger('arkive-runner').info(
-			`removed ${deployments.length} deployments for arkive ${arkiveId.id}`,
+			`removed deployment ${deploymentId}`,
 		)
 	}
 
@@ -63,38 +102,38 @@ export class ArkiveRunner implements ArkiveActor {
 		await this.addDeployment(deployment)
 	}
 
-	async updatedDeploymentHandler(deployment: arkiverTypes.Arkive) {
-		switch (deployment.deployment.status) {
-			case 'paused': {
-				const currentDeployment = this.#deployments.find(
-					(a) => a.arkive.deployment.id === deployment.deployment.id,
-				)
-				if (!currentDeployment) break
-				logger('arkive-runner').debug(
-					`pausing arkive ${deployment.id}@${deployment.deployment.major_version}.${deployment.deployment.minor_version}`,
-				)
-				this.removeDeployment(currentDeployment)
-				logger('arkive-runner').info(
-					`paused arkive ${deployment.id}@${deployment.deployment.major_version}.${deployment.deployment.minor_version}`,
-				)
-				break
-			}
-			case 'restarting': {
-				const currentDeployment = this.#deployments.find(
-					(a) => a.arkive.deployment.id === deployment.deployment.id,
-				)
+	async updatedDeploymentHandler(_deployment: arkiverTypes.Arkive) {
+		// switch (deployment.deployment.status) {
+		// 	case 'paused': {
+		// 		const currentDeployment = this.#deployments.find(
+		// 			(a) => a.arkive.deployment.id === deployment.deployment.id,
+		// 		)
+		// 		if (!currentDeployment) break
+		// 		logger('arkive-runner').debug(
+		// 			`pausing arkive ${deployment.id}@${deployment.deployment.major_version}.${deployment.deployment.minor_version}`,
+		// 		)
+		// 		this.removeDeployment(currentDeployment)
+		// 		logger('arkive-runner').info(
+		// 			`paused arkive ${deployment.id}@${deployment.deployment.major_version}.${deployment.deployment.minor_version}`,
+		// 		)
+		// 		break
+		// 	}
+		// 	case 'restarting': {
+		// 		const currentDeployment = this.#deployments.find(
+		// 			(a) => a.arkive.deployment.id === deployment.deployment.id,
+		// 		)
 
-				if (currentDeployment) {
-					this.removeDeployment(currentDeployment)
-				}
+		// 		if (currentDeployment) {
+		// 			this.removeDeployment(currentDeployment)
+		// 		}
 
-				await this.addDeployment(deployment)
-				logger('arkive-runner').info(
-					`restarted arkive ${deployment.id}@${deployment.deployment.major_version}.${deployment.deployment.minor_version}`,
-				)
-				break
-			}
-		}
+		// 		await this.addDeployment(deployment)
+		// 		logger('arkive-runner').info(
+		// 			`restarted arkive ${deployment.id}@${deployment.deployment.major_version}.${deployment.deployment.minor_version}`,
+		// 		)
+		// 		break
+		// 	}
+		// }
 	}
 
 	spawnArkiverWorker(arkive: arkiverTypes.Arkive) {
@@ -196,6 +235,9 @@ export class ArkiveRunner implements ArkiveActor {
 		this.#deployments = this.#deployments.filter((a) =>
 			a.arkive.deployment.id !== deployment.arkive.deployment.id
 		)
+		this.#redis.srem(`${MESSENGER_REDIS_KEYS.ACTIVE_DEPLOYMENTS}:${this.#hostname}`, deployment.arkive.deployment.id).catch((e) => {
+			logger('arkive-runner').error(e)
+		})
 	}
 
 	getPreviousDeployments(deployment: arkiverTypes.Arkive) {

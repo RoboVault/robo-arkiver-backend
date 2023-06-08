@@ -1,20 +1,20 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: arkiver-graphql-server
+  name: arkive-runner
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: arkiver-graphql-server
+      app: arkive-runner
   template:
     metadata:
       labels:
-        app: arkiver-graphql-server
+        app: arkive-runner
     spec:
       containers:
-      - name: arkiver-graphql-server
-        image: arkiver-graphql-server
+      - name: arkive-runner
+        image: arkive-runner
         imagePullPolicy: Never
         env:
         - name: SUPABASE_SERVICE_KEY
@@ -47,13 +47,14 @@ spec:
             secretKeyRef:
               name: env-secrets
               key: INFLUX_BUCKET
-        - name: SERVER_REDIS_HOSTNAME
+        - name: MESSENGER_REDIS_HOSTNAME
           valueFrom:
             configMapKeyRef:
               name: env-config
-              key: SERVER_REDIS_HOSTNAME
-        - name: SERVER_REDIS_PORT
+              key: MESSENGER_REDIS_HOSTNAME
+        - name: MESSENGER_REDIS_PORT
           valueFrom:
             configMapKeyRef:
               name: env-config
-              key: SERVER_REDIS_PORT
+              key: MESSENGER_REDIS_PORT
+

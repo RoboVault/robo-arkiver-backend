@@ -10,7 +10,7 @@ if (import.meta.main) {
 		actors,
 		name,
 		provider,
-	} = getModuleConfig()
+	} = await getModuleConfig()
 
 	const managerName = `manager-${name}`
 

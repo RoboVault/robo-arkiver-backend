@@ -1,5 +1,6 @@
 import { arkiverTypes } from '../../deps.ts'
 import { UserProfile } from './supabase-auth.ts'
+import { RawArkive } from './supabase.ts'
 
 export interface IndexedBlockHeightParams {
 	chain: string
@@ -8,12 +9,13 @@ export interface IndexedBlockHeightParams {
 }
 
 export interface ArkiveProvider {
-	getLatestActiveDeployments(): Promise<arkiverTypes.Arkive[]>
+	// getDeploymentsDiff(): Promise<{ newDeployments: arkiverTypes.Arkive[], deletedDeploymentIds: number[] }>
+	getRawArkives(): Promise<RawArkive[]>
 	listenNewDeployment(
 		callback: (arkive: arkiverTypes.Arkive) => Promise<void> | void,
 	): void
-	listenDeletedArkive(
-		callback: (arkiveId: { id: number }) => void | Promise<void>,
+	listenDeletedDeployment(
+		callback: (deploymentId: number) => void | Promise<void>,
 	): void
 	listenUpdatedDeployment(
 		callback: (
@@ -31,9 +33,9 @@ export interface ArkiveProvider {
 
 export interface ArkiveActor {
 	run(): Promise<void> | void
-	addDeployment(arkive: arkiverTypes.Arkive): Promise<void> | void
+	initializeDeployments(rawArkives: RawArkive[]): Promise<void> | void
 	newDeploymentHandler(arkive: arkiverTypes.Arkive): Promise<void> | void
-	deletedArkiveHandler(arkiveId: { id: number }): Promise<void> | void
+	deletedDeploymentHandler(deploymentId: number): Promise<void> | void
 	updatedDeploymentHandler(arkive: arkiverTypes.Arkive): Promise<void> | void
 	cleanUp(): Promise<void> | void
 }

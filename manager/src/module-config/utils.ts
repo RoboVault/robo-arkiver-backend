@@ -1,7 +1,8 @@
+import { redis } from '../../deps.ts'
 import { ArkiveActor, ArkiveProvider } from '../providers/interfaces.ts'
 import { getEnv, getSupabaseClient } from '../utils.ts'
 import { getModuleActors } from './actors.ts'
-import { getModuleProvider } from './provider.ts'
+import { getModuleProvider, moduleProvider } from './provider.ts'
 
 export const moduleConfig = {
 	'ARKIVE_RUNNER': {
@@ -10,9 +11,12 @@ export const moduleConfig = {
 	'GRAPHQL_SERVER': {
 		name: 'graphql-server',
 	},
+	'MESSENGER': {
+		name: 'messenger'
+	}
 } as const
 
-export const getModuleConfig = () => {
+export const getModuleConfig = async () => {
 	const moduleName = getEnv('MODULE')
 
 	validateModuleName(moduleName)
@@ -21,24 +25,44 @@ export const getModuleConfig = () => {
 
 	switch (moduleName) {
 		case 'ARKIVE_RUNNER': {
+			const redisClient = await redis.connect({
+				hostname: getEnv('MESSENGER_REDIS_HOSTNAME'),
+				port: parseInt(getEnv('MESSENGER_REDIS_PORT')),
+			})
 			provider = getModuleProvider(moduleName)({
 				environment: getEnv('ENVIRONMENT'),
 				supabase: getSupabaseClient(),
+				redis: redisClient
 			})
-			actors = getModuleActors(moduleName)(provider.provider)
+			actors = getModuleActors(moduleName)(provider.provider, redisClient)
 			break
 		}
 		case 'GRAPHQL_SERVER': {
 			const supabase = getSupabaseClient()
 			const environment = getEnv('ENVIRONMENT')
-			provider = getModuleProvider(moduleName)({
+			provider = moduleProvider[moduleName]({
 				environment,
-				supabase,
+				supabase
 			})
 			actors = getModuleActors(moduleName)({
 				environment,
 				supabase,
 			})
+			break
+		}
+		case 'MESSENGER': {
+			const supabase = getSupabaseClient()
+			const environment = getEnv('ENVIRONMENT')
+			provider = getModuleProvider(moduleName)({
+				environment,
+				supabase
+			})
+			actors = getModuleActors(moduleName)(
+				await redis.connect({
+					hostname: getEnv('MESSENGER_REDIS_HOSTNAME'),
+					port: parseInt(getEnv('MESSENGER_REDIS_PORT')),
+				})
+			)
 			break
 		}
 	}
