@@ -2,6 +2,7 @@ export const REDIS_KEYS = {
 	IP_RATELIMITER: 'ip-ratelimiter',
 	LIMITS: 'limits',
 	API_RATELIMITER: 'api-ratelimiter',
+	FAULT_ARKIVE: 'faulty-arkive',
 } as const
 
 export const SUPABASE_TABLES = {
