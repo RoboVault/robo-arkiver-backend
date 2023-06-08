@@ -57,7 +57,7 @@ export class ArkiveManager {
 			this.listenNewDeployments()
 			this.listenForDeletedArkives()
 			this.listenForUpdatedDeployments()
-			
+
 			this.faultyArkives = await FaultyArkives.create(this.retryFaultyArkive.bind(this))
 			await Promise.all([
 				deployments.map(arkive => this.addNewDeployment(arkive))
@@ -72,15 +72,15 @@ export class ArkiveManager {
 		const isActive = this.deployments.find(e => e.arkive.id === id)
 
 		// It's active, this means it's working. Remove it from errors. 
-		if (isActive) 
+		if (isActive)
 			return false
 
 		const deployment = (await this.arkiveProvider.getDeployments()).find(e => e.deployment.arkive_id === id)
-		
+
 		// It doesn't exis. Delete it.
-		if (!deployment) 
+		if (!deployment)
 			return false
-		
+
 		await this.addNewDeployment(deployment)
 		return true
 	}
@@ -95,7 +95,7 @@ export class ArkiveManager {
 				const sameMajor = previousDeployments.filter(
 					(a) =>
 						a.arkive.deployment.major_version ===
-							deployment.deployment.major_version,
+						deployment.deployment.major_version,
 				)
 				// remove old minor versions
 				for (const deployment of sameMajor) {
@@ -198,6 +198,7 @@ export class ArkiveManager {
 				removeData: true,
 			})
 			this.faultyArkives?.removeArkive(arkive.arkive)
+			this.faultyArkives?.removeArkive(arkive.arkive)
 		})
 		this.deployments = this.deployments.filter((a) => a.arkive.id !== id)
 		logger('manager').info('removed arkives', id)
@@ -269,6 +270,7 @@ export class ArkiveManager {
 					`Arkive worker handler error, stopping worker ...`,
 				)
 				this.updateDeploymentStatus(arkive, 'error')
+				this.updateDeploymentStatus(arkive, 'error')
 				this.removeArkive({
 					arkive,
 					worker,
@@ -287,7 +289,7 @@ export class ArkiveManager {
 						// check if previous version is an older major version
 						if (
 							previousVersion.arkive.deployment.major_version <
-								arkive.deployment.major_version
+							arkive.deployment.major_version
 						) {
 							logger('manager').info(
 								'removing old major version',
@@ -347,9 +349,9 @@ export class ArkiveManager {
 					(a.arkive.deployment.major_version <
 						arkive.deployment.major_version) ||
 					(a.arkive.deployment.major_version === // same major version but older minor version
-							arkive.deployment.major_version &&
+						arkive.deployment.major_version &&
 						a.arkive.deployment.minor_version <
-							arkive.deployment.minor_version)
+						arkive.deployment.minor_version)
 				),
 		)
 	}
@@ -371,6 +373,7 @@ export class ArkiveManager {
 		arkive: arkiverTypes.Arkive,
 		status: arkiverTypes.Deployment['status'],
 	) {
+		await this.faultyArkives?.updateDeploymentStatus(arkive, status)
 		await this.faultyArkives?.updateDeploymentStatus(arkive, status)
 		await this.arkiveProvider.updateDeploymentStatus(arkive, status)
 	}

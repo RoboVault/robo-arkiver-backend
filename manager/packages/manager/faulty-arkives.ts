@@ -16,9 +16,9 @@ type RetryArkive = (arkiveId: number) => Promise<boolean>
 export class FaultyArkives {
 	private interval: number
 	private key = REDIS_KEYS.FAULT_ARKIVE
-	
+
 	private constructor(private redis: redis.Redis, private retryArkive: RetryArkive) {
-		this.interval  = setInterval(this.processFaultyArkives.bind(this), FAULTY_ARKIVES_INTERVAL)
+		this.interval = setInterval(this.processFaultyArkives.bind(this), FAULTY_ARKIVES_INTERVAL)
 	}
 
 	static async create(retryArkive: RetryArkive) {
@@ -46,7 +46,7 @@ export class FaultyArkives {
 					latestRetryAt: now,
 					retryCount: 0,
 				})
-			} 			
+			}
 			return
 		}
 
