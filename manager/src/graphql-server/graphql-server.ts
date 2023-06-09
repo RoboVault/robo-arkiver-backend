@@ -249,7 +249,6 @@ export class GraphQLServer implements ArkiveActor {
 		}
 
 		const apiKey = url.searchParams.get('apiKey')
-
 		if (apiKey) {
 			const [, username, arkivename] = url.pathname.split('/')
 			const apiKeyLimited = await apiKeyLimiter({
@@ -265,8 +264,10 @@ export class GraphQLServer implements ArkiveActor {
 			const { hfMax, hfWindow } = apiKeyLimited
 
 			const ipLimiter = createIpLimiter(this.redis, {
+				name: 'apikey',
 				max: hfMax,
 				window: hfWindow,
+				message: `Too many requests for this api key. Max ${hfMax} req every ${hfWindow} seconds. Please try again in ${hfWindow} seconds or upgrade your account.`
 			})
 
 			const ipLimited = await ipLimiter(req, connInfo)
@@ -275,16 +276,20 @@ export class GraphQLServer implements ArkiveActor {
 			}
 		} else {
 			const ipLimiter = createIpLimiter(this.redis, {
+				name: '5sec',
 				max: 10,
 				window: 5,
+				message: 'Too many requests form this IP. Max 10 req every 5 seconds. Please try again in 5 seconds or use an api key.'
 			})
 			const ipLimited = await ipLimiter(req, connInfo)
 			if (ipLimited) {
 				return ipLimited
 			}
 			const dayIpLimit = createIpLimiter(this.redis, {
+				name: 'daily',
 				max: 5000,
 				window: 24 * 60 * 60,
+				message: 'Too many requests form this IP. Max 5000 req per day. Please use an api key for more requests.'
 			})
 			const dayIpLimited = await dayIpLimit(req, connInfo)
 			if (dayIpLimited) {
