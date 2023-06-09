@@ -1,33 +1,24 @@
 import { arkiverTypes, redis } from "../../deps.ts"
 import { REDIS_KEYS } from "../constants.ts"
-import { buildObjectFromArray, getEnv } from "../utils.ts"
+import { buildObjectFromArray } from "../utils.ts"
 
 const FAULTY_ARKIVES_INTERVAL = 1000 * 10
 const FAULTY_ARKIVES_RETRY_RATE = 1000 * 60 * 5 // 5 miunutes
 
-type ErrorStatus = {
+interface ErrorStatus {
 	firstErrorAt: number
 	latestRetryAt: number
 	retryCount: number
 }
 
-type RetryArkive = (arkiveId: number) => Promise<boolean>
+type RetryArkive = (deploymentId: number) => Promise<boolean>
 
 export class FaultyArkives {
 	private interval: number
 	private key = REDIS_KEYS.FAULT_ARKIVE
 
-	private constructor(private redis: redis.Redis, private retryArkive: RetryArkive) {
+	constructor(private redis: redis.Redis, private retryArkive: RetryArkive) {
 		this.interval = setInterval(this.processFaultyArkives.bind(this), FAULTY_ARKIVES_INTERVAL)
-	}
-
-	static async create(retryArkive: RetryArkive) {
-		const client = await redis.connect({
-			hostname: getEnv('REDIS_HOSTNAME'),
-			port: Number(getEnv('REDIS_PORT')),
-		})
-		await client.del(REDIS_KEYS.FAULT_ARKIVE)
-		return new FaultyArkives(client, retryArkive)
 	}
 
 	public async updateDeploymentStatus(
@@ -35,7 +26,7 @@ export class FaultyArkives {
 		status: arkiverTypes.Deployment['status'],
 	) {
 		// get arkive from redis
-		const id = arkive.id.toString()
+		const id = arkive.deployment.id.toString()
 		const errorStatus = await this.get(id)
 		if (!errorStatus) {
 			// Only act if status is error
@@ -56,12 +47,6 @@ export class FaultyArkives {
 		}
 	}
 
-	public async removeArkive(arkive: arkiverTypes.Arkive) {
-		const id = arkive.id.toString()
-		if (await this.get(id))
-			await this.redis.hdel(this.key, id)
-	}
-
 	private async set(id: string, errorStatus: ErrorStatus) {
 		await this.redis.hset(this.key, id, JSON.stringify(errorStatus))
 	}
@@ -76,17 +61,20 @@ export class FaultyArkives {
 	private async processFaultyArkives() {
 		const arkives = buildObjectFromArray(await this.redis.hgetall(this.key))
 		const now = Date.now()
-		for (const arkiveStr in arkives) {
-			const arkive = JSON.parse(arkives[arkiveStr]) as ErrorStatus
-			if (now - arkive.latestRetryAt < FAULTY_ARKIVES_RETRY_RATE)
+		for (const id in arkives) {
+			const errorStatus = JSON.parse(arkives[id]) as ErrorStatus
+			if (now - errorStatus.latestRetryAt < FAULTY_ARKIVES_RETRY_RATE)
 				continue
 
 			// Retry time!
-			arkive.latestRetryAt = Date.now()
-			arkive.retryCount++
-			const keep = await this.retryArkive(parseInt(arkiveStr))
-			this.set(arkiveStr, arkive)
-			if (!keep) await this.redis.hdel(this.key, arkiveStr)
+			const keep = await this.retryArkive(parseInt(id))
+			if (!keep) {
+				await this.redis.hdel(this.key, id)
+				return
+			}
+			errorStatus.latestRetryAt = Date.now()
+			errorStatus.retryCount++
+			this.set(id, errorStatus)
 		}
 	}
 }

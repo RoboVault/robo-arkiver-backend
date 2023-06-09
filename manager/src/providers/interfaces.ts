@@ -11,6 +11,7 @@ export interface IndexedBlockHeightParams {
 export interface ArkiveProvider {
 	// getDeploymentsDiff(): Promise<{ newDeployments: arkiverTypes.Arkive[], deletedDeploymentIds: number[] }>
 	getRawArkives(): Promise<RawArkive[]>
+	getDeployment(deploymentId: number): Promise<arkiverTypes.Arkive | null>
 	listenNewDeployment(
 		callback: (arkive: arkiverTypes.Arkive) => Promise<void> | void,
 	): void

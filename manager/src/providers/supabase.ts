@@ -38,6 +38,31 @@ export class SupabaseProvider implements ArkiveProvider {
 		return arkivesRes.data
 	}
 
+	public async getDeployment(deploymentId: number): Promise<arkiverTypes.Arkive | null> {
+		const { data, error } = await this.supabase
+			.from(SUPABASE_TABLES.ARKIVE)
+			.select<`*, ${typeof SUPABASE_TABLES.DEPLOYMENTS}!inner(*)`, RawArkive>(`*, ${SUPABASE_TABLES.DEPLOYMENTS}!inner(*)`)
+			.eq(`${SUPABASE_TABLES.DEPLOYMENTS}.id`, deploymentId)
+
+		if (error) {
+			logger('supabase-provider').error(error, {
+				name: 'SupabaseProvider.getDeployment',
+				deploymentId,
+			})
+			return null
+		}
+
+		if (!data || data.length === 0 || !data[0].deployments || data[0].deployments.length === 0) {
+			return null
+		}
+
+		const arkive = data[0]
+		return {
+			...arkive,
+			deployment: arkive.deployments[0]
+		}
+	}
+
 	public listenNewDeployment(
 		callback: (arkive: arkiverTypes.Arkive) => Promise<void>,
 	): void {

@@ -1,19 +1,25 @@
 import { redis, arkiverTypes } from "../../deps.ts";
 import { MESSENGER_REDIS_KEYS } from "../constants.ts";
 import { logger } from "../logger/logger.ts";
-import { ArkiveActor } from "../providers/interfaces.ts";
+import { ArkiveActor, ArkiveProvider } from "../providers/interfaces.ts";
 import { RawArkive } from "../providers/supabase.ts";
 import { filterRawArkives } from "../utils.ts";
+import { FaultyArkives } from "./faulty-arkives.ts";
 
 export interface ArkiveMessengerParams {
 	redis: redis.Redis
+	arkiveProvider: ArkiveProvider
 }
 
 export class ArkiveMessenger implements ArkiveActor {
 	#redis: redis.Redis
+	#faultyArkives: FaultyArkives
+	#arkiveProvider: ArkiveProvider
 
 	constructor(params: ArkiveMessengerParams) {
 		this.#redis = params.redis
+		this.#faultyArkives = new FaultyArkives(this.#redis, this.retryArkive.bind(this))
+		this.#arkiveProvider = params.arkiveProvider
 	}
 
 	async run() {
@@ -80,10 +86,21 @@ export class ArkiveMessenger implements ArkiveActor {
 				break
 			}
 		}
+		await this.#faultyArkives.updateDeploymentStatus(arkive, arkive.deployment.status)
 	}
 
 	async deletedDeploymentHandler(deploymentId: number) {
 		await this.deleteDeployment(deploymentId)
+	}
+
+	async retryArkive(deploymentId: number) {
+		const deployment = await this.#arkiveProvider.getDeployment(deploymentId)
+		if (!deployment) return false
+		if (deployment.deployment.status === 'error') {
+			await this.addDeployment(deployment)
+			return true
+		}
+		return false
 	}
 
 	cleanUp() {
