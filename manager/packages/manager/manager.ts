@@ -60,7 +60,7 @@ export class ArkiveManager {
 			
 			this.faultyArkives = await FaultyArkives.create(this.retryFaultyArkive.bind(this))
 			await Promise.all([
-				deployments.map(arkive => this.faultyArkives?.updateDeploymentStatus(arkive, 'error')))
+				deployments.map(arkive => this.faultyArkives?.updateDeploymentStatus(arkive, 'error'))
 			])
 
 		} catch (e) {
@@ -193,8 +193,8 @@ export class ArkiveManager {
 		const deletedArkives = this.deployments.filter((a) => a.arkive.id === id)
 		deletedArkives.forEach((arkive) => {
 			this.removeArkive(arkive, {
-				updateStatus: false,
 				filter: false,
+				updateStatus: false,
 				removeData: true,
 			})
 			this.faultyArkives?.removeArkive(arkive.arkive)
@@ -294,9 +294,9 @@ export class ArkiveManager {
 								previousVersion.arkive,
 							)
 							this.removeArkive(previousVersion, {
-								updateStatus: true,
 								filter: true,
 								removeData: true,
+								updateStatus: true,
 							})
 						}
 					}
