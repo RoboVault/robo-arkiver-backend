@@ -13,42 +13,46 @@ spec:
         app: messenger
     spec:
       containers:
-      - name: messenger
-        image: messenger
-        imagePullPolicy: Never
-        env:
-        - name: SUPABASE_SERVICE_KEY
-          valueFrom:
-            secretKeyRef:
-              name: env-secrets
-              key: SUPABASE_SERVICE_KEY
-        - name: INFLUX_URL
-          valueFrom:
-            secretKeyRef:
-              name: env-secrets
-              key: INFLUX_URL
-        - name: INFLUX_TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: env-secrets
-              key: INFLUX_TOKEN
-        - name: INFLUX_ORG
-          valueFrom:
-            secretKeyRef:
-              name: env-secrets
-              key: INFLUX_ORG
-        - name: INFLUX_BUCKET
-          valueFrom:
-            secretKeyRef:
-              name: env-secrets
-              key: INFLUX_BUCKET
-        - name: MESSENGER_REDIS_HOSTNAME
-          valueFrom:
-            configMapKeyRef:
-              name: env-config
-              key: MESSENGER_REDIS_HOSTNAME
-        - name: MESSENGER_REDIS_PORT
-          valueFrom:
-            configMapKeyRef:
-              name: env-config
-              key: MESSENGER_REDIS_PORT
+        - name: messenger
+          image: messenger
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          imagePullPolicy: Never
+          env:
+            - name: SUPABASE_SERVICE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: env-secrets
+                  key: SUPABASE_SERVICE_KEY
+            - name: INFLUX_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: env-config
+                  key: INFLUX_URL
+            - name: INFLUX_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: env-secrets
+                  key: INFLUX_ADMIN_TOKEN
+            - name: INFLUX_ORG
+              valueFrom:
+                configMapKeyRef:
+                  name: env-config
+                  key: INFLUX_ORG
+            - name: INFLUX_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: env-config
+                  key: INFLUX_BUCKET
+            - name: MESSENGER_REDIS_HOSTNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: env-config
+                  key: MESSENGER_REDIS_HOSTNAME
+            - name: MESSENGER_REDIS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: env-config
+                  key: MESSENGER_REDIS_PORT

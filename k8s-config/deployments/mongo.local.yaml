@@ -13,8 +13,12 @@ spec:
         app: local-mongo
     spec:
       containers:
-      - name: local-mongo
-        image: mongo:latest
-        ports:
-        - containerPort: 27017
-          name: mongo
+        - name: local-mongo
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          image: mongo:latest
+          ports:
+            - containerPort: 27017
+              name: mongo
