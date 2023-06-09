@@ -53,7 +53,7 @@ export class ArkiveManager {
 				await this.graphQLServer?.run()
 			}
 
-			const deployments = (await this.arkiveProvider.getDeployments()).filter(e => e.deployment.arkive_id === 68)
+			const deployments = (await this.arkiveProvider.getDeployments())
 			this.listenNewDeployments()
 			this.listenForDeletedArkives()
 			this.listenForUpdatedDeployments()
