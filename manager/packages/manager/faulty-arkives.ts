@@ -2,8 +2,8 @@ import { arkiverTypes, redis } from "../../deps.ts"
 import { REDIS_KEYS } from "../constants.ts"
 import { buildObjectFromArray, getEnv } from "../utils.ts"
 
-const FAULTY_ARKIVES_INTERVAL = 1000
-const FAULTY_ARKIVES_RETRY_RATE = 1000 * 10 // 30s
+const FAULTY_ARKIVES_INTERVAL = 1000 * 10
+const FAULTY_ARKIVES_RETRY_RATE = 1000 * 60 * 5 // 5 miunutes
 
 type ErrorStatus = {
 	firstErrorAt: number
