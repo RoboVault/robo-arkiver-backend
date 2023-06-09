@@ -7,6 +7,7 @@ import { ArkiveMessageEvent, NewArkiveMessageEvent } from './types.ts'
 import { MongoDataProvider } from '../providers/mongodb.ts'
 import { GraphQLServer } from '../graphql-server/graphql-server.ts'
 import { LocalArkiveProvider } from '../local-arkive-provider/local-arkive-provider.ts'
+import { FaultyArkives } from './faulty-arkives.ts'
 
 export const arkivesDir = '../../arkives'
 
@@ -17,6 +18,7 @@ export class ArkiveManager {
 	private deployments: { arkive: arkiverTypes.Arkive; worker: Worker }[] = []
 	private rpcUrls?: Record<string, string>
 	private options: { server: boolean; manager: boolean }
+	private faultyArkives?: FaultyArkives
 
 	constructor(params: {
 		environment: string
@@ -50,16 +52,37 @@ export class ArkiveManager {
 			if (this.options.server) {
 				await this.graphQLServer?.run()
 			}
-			const deployments = await this.arkiveProvider.getDeployments()
+
+			const deployments = (await this.arkiveProvider.getDeployments()).filter(e => e.deployment.arkive_id === 68)
 			this.listenNewDeployments()
 			this.listenForDeletedArkives()
 			this.listenForUpdatedDeployments()
-			for (const deployment of deployments) {
-				await this.addNewDeployment(deployment)
-			}
+			
+			this.faultyArkives = await FaultyArkives.create(this.retryFaultyArkive.bind(this))
+			await Promise.all([
+				deployments.map(arkive => this.faultyArkives?.updateDeploymentStatus(arkive, 'error')))
+			])
+
 		} catch (e) {
 			logger('manager').error(e, { source: 'ArkiveManager.init' })
 		}
+	}
+
+	private async retryFaultyArkive(id: number): Promise<boolean> {
+		const isActive = this.deployments.find(e => e.arkive.id === id)
+
+		// It's active, this means it's working. Remove it from errors. 
+		if (isActive) 
+			return false
+
+		const deployment = (await this.arkiveProvider.getDeployments()).find(e => e.deployment.arkive_id === id)
+		
+		// It doesn't exis. Delete it.
+		if (!deployment) 
+			return false
+		
+		await this.addNewDeployment(deployment)
+		return true
 	}
 
 	private listenNewDeployments() {
@@ -174,6 +197,7 @@ export class ArkiveManager {
 				filter: false,
 				removeData: true,
 			})
+			this.faultyArkives?.removeArkive(arkive.arkive)
 		})
 		this.deployments = this.deployments.filter((a) => a.arkive.id !== id)
 		logger('manager').info('removed arkives', id)
@@ -244,7 +268,7 @@ export class ArkiveManager {
 				logger('manager').error(
 					`Arkive worker handler error, stopping worker ...`,
 				)
-				this.arkiveProvider.updateDeploymentStatus(arkive, 'error')
+				this.updateDeploymentStatus(arkive, 'error')
 				this.removeArkive({
 					arkive,
 					worker,
@@ -292,7 +316,7 @@ export class ArkiveManager {
 				source: 'worker-arkive-' + arkive.id,
 			})
 			e.preventDefault()
-			this.arkiveProvider.updateDeploymentStatus(arkive, 'error').catch((e) =>
+			this.updateDeploymentStatus(arkive, 'error').catch((e) =>
 				logger('manager').error(e)
 			)
 			this.removeArkive({
@@ -347,6 +371,7 @@ export class ArkiveManager {
 		arkive: arkiverTypes.Arkive,
 		status: arkiverTypes.Deployment['status'],
 	) {
+		await this.faultyArkives?.updateDeploymentStatus(arkive, status)
 		await this.arkiveProvider.updateDeploymentStatus(arkive, status)
 	}
 
