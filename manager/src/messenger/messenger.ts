@@ -40,7 +40,7 @@ export class ArkiveMessenger implements ArkiveActor {
 
 		logger('messenger').debug(`Raw deployments: ${deployments.map((d) => d.deployment.id)}`)
 		logger('messenger').debug(`Existing deployments: ${existingDeploymentIds}`)
-		logger('messenger').debug(`New deployments: ${newDeployments.map((d) => d.id)}`)
+		logger('messenger').debug(`New deployments: ${newDeployments.map((d) => d.deployment.id)}`)
 		logger('messenger').debug(`Deleted deployments: ${deletedDeploymentIds}`)
 
 		for (const deployment of newDeployments) {
