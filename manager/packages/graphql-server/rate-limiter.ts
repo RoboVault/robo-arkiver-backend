@@ -8,8 +8,10 @@ export type RateLimiter = (
 ) => Promise<Response | undefined>
 
 export interface IpRateLimitOptions {
+	name: string
 	max: number
 	window: number
+	message: string
 }
 
 export interface MonthlyRateLimitParams {
@@ -20,14 +22,14 @@ export const createIpLimiter = (
 	redis: redis.Redis,
 	options: IpRateLimitOptions,
 ): RateLimiter => {
-	const { max, window } = options
+	const { max, window, name, message } = options
 
 	return async (req: Request, connInfo: http.ConnInfo) => {
 		const ip = (connInfo.remoteAddr as Deno.NetAddr).hostname ??
 			req.headers.get('x-forwarded-for')
 		if (!ip) return new Response('Bad Request', { status: 400 })
 
-		const key = `${REDIS_KEYS.IP_RATELIMITER}:${ip}`
+		const key = `${REDIS_KEYS.IP_RATELIMITER}:${name}:${ip}`
 		const current = await redis.get(key)
 		if (!current) {
 			await redis.set(key, 1, { ex: window })
@@ -35,8 +37,10 @@ export const createIpLimiter = (
 		}
 
 		const currentInt = parseInt(current)
+		console.log(currentInt)
+		const expiry = await redis.ttl(key)
 		if (currentInt >= max) {
-			return new Response('Too Many Requests', { status: 429 })
+			return new Response(`Too Many Requests ${message} (expires in ${expiry} seconds)`, { status: 429 })
 		}
 
 		await redis.incr(key)
@@ -103,9 +107,9 @@ export const apiKeyLimiter = async (
 			hfWindow: parseInt(hfWindow),
 		}
 	}
-
+	const expiry = await redis.ttl(countRedisKey)
 	if (parseInt(count as string) >= parseInt(max)) {
-		return new Response('Too Many Requests', { status: 429 })
+		return new Response(`Too Many Requests. The daily limit for your account is: ${parseInt(max)}. Please wait ${(expiry / 60).toFixed(1)} minutes.`, { status: 429 })
 	}
 
 	await redis.incr(countRedisKey)
