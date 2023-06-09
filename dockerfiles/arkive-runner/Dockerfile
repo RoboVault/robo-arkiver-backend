@@ -10,7 +10,7 @@ EXPOSE 4000
 WORKDIR /app
 
 COPY deps.ts .
-RUN deno cache --reload deps.ts
+RUN deno cache deps.ts
 
 ADD . .
 RUN deno cache main.ts
