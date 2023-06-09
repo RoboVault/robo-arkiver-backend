@@ -60,7 +60,7 @@ export class ArkiveManager {
 
 			this.faultyArkives = await FaultyArkives.create(this.retryFaultyArkive.bind(this))
 			await Promise.all([
-				deployments.map(arkive => this.faultyArkives?.updateDeploymentStatus(arkive, 'error'))
+				deployments.map(arkive => this.addNewDeployment(arkive))
 			])
 
 		} catch (e) {
