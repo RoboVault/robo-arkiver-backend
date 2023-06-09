@@ -38,8 +38,8 @@ export const createIpLimiter = (
 
 		const currentInt = parseInt(current)
 		console.log(currentInt)
-		const expiry = await redis.ttl(key)
 		if (currentInt >= max) {
+			const expiry = await redis.ttl(key)
 			return new Response(`Too Many Requests ${message} (expires in ${expiry} seconds)`, { status: 429 })
 		}
 
@@ -107,8 +107,8 @@ export const apiKeyLimiter = async (
 			hfWindow: parseInt(hfWindow),
 		}
 	}
-	const expiry = await redis.ttl(countRedisKey)
 	if (parseInt(count as string) >= parseInt(max)) {
+		const expiry = await redis.ttl(countRedisKey)
 		return new Response(`Too Many Requests. The daily limit for your account is: ${parseInt(max)}. Please wait ${(expiry / 60).toFixed(1)} minutes.`, { status: 429 })
 	}
 

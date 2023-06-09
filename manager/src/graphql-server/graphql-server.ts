@@ -248,7 +248,7 @@ export class GraphQLServer implements ArkiveActor {
 			)
 		}
 
-		const apiKey = url.searchParams.get('apiKey')
+		const apiKey = url.searchParams.get('apiKey') || req.headers.get('x-api-key')
 		if (apiKey) {
 			const [, username, arkivename] = url.pathname.split('/')
 			const apiKeyLimited = await apiKeyLimiter({
