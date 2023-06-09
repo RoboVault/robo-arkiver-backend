@@ -59,11 +59,8 @@ export class ArkiveManager {
 			this.listenForUpdatedDeployments()
 			
 			this.faultyArkives = await FaultyArkives.create(this.retryFaultyArkive.bind(this))
-			const active = deployments.filter(e => e.deployment.status !== 'error')
-			const faulty = deployments.filter(e => e.deployment.status === 'error')
 			await Promise.all([
-				active.map(arkive => this.addNewDeployment(arkive),
-				faulty.map(arkive => this.faultyArkives?.updateDeploymentStatus(arkive, 'error')))
+				deployments.map(arkive => this.faultyArkives?.updateDeploymentStatus(arkive, 'error')))
 			])
 
 		} catch (e) {
