@@ -17,7 +17,7 @@ spec:
         - name: influx
           resources:
             limits:
-              memory: "128Mi"
+              memory: "512Mi"
               cpu: "500m"
           image: influxdb:latest
           ports:
@@ -64,6 +64,7 @@ spec:
         name: influx-storage
       spec:
         accessModes: ["ReadWriteOnce"]
+        storageClassName: "ebs-sc"
         resources:
           requests:
-            storage: 1Gi
+            storage: 10Gi

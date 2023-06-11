@@ -58,6 +58,7 @@ export const getModuleConfig = async () => {
 				supabase
 			})
 			actors = getModuleActors(moduleName)(
+				provider.provider,
 				await redis.connect({
 					hostname: getEnv('MESSENGER_REDIS_HOSTNAME'),
 					port: parseInt(getEnv('MESSENGER_REDIS_PORT')),

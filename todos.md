@@ -2,8 +2,8 @@
 
 - implement horizontal pod autoscaling for arkive-runner
   - add SIGTERM handler in manager
-- build images and push to ecr
-  - get rid of imagePullPolicy: Never
+  - add kickback mechanism in arkiver-runner: kick jobs back to messenger
+  - check for memory usage in arkiver-runner and stop listening for new jobs
+    when full
 - build images for cache-manager and data-manager
   - write config files for them
-- add StatefulSet for influx and add a service for it

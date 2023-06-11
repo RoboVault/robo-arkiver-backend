@@ -8,13 +8,13 @@ export const getModuleProvider = <TModuleName extends keyof typeof moduleConfig>
 }
 
 export const moduleProvider = {
-	'ARKIVE_RUNNER': (
+	ARKIVE_RUNNER: (
 		params: { supabase: supabase.SupabaseClient; environment: string, redis: redis.Redis },
 	) => ({ name: 'runner-provider', provider: new RunnerProvider({ environment: params.environment, redis: params.redis, supabase: params.supabase }) }),
-	'GRAPHQL_SERVER': (
+	GRAPHQL_SERVER: (
 		params: { supabase: supabase.SupabaseClient; environment: string },
 	) => ({ name: 'supabase-provider', provider: new SupabaseProvider(params) }),
-	'MESSENGER': (
+	MESSENGER: (
 		params: { supabase: supabase.SupabaseClient; environment: string }
 	) => ({ name: 'supabase-provider', provider: new SupabaseProvider(params) })
 } as const

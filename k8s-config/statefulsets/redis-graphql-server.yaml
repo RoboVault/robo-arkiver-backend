@@ -14,19 +14,20 @@ spec:
         app: redis-graphql-server
     spec:
       containers:
-      - name: redis
-        image: redis
-        ports:
-        - containerPort: 6379
-          name: redis
-        volumeMounts:
-        - name: redis-graphql-server-data
-          mountPath: /data
+        - name: redis
+          image: redis
+          ports:
+            - containerPort: 6379
+              name: redis
+          volumeMounts:
+            - name: redis-graphql-server-data
+              mountPath: /data
   volumeClaimTemplates:
-  - metadata:
-      name: redis-graphql-server-data
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      resources:
-        requests:
-          storage: 1Gi
+    - metadata:
+        name: redis-graphql-server-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: "ebs-sc"
+        resources:
+          requests:
+            storage: 1Gi

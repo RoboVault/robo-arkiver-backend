@@ -1,12 +1,12 @@
 import 'https://deno.land/std@0.189.0/dotenv/load.ts'
-import { arkiverTypes, influx, log, mongoose } from '../../deps.ts'
+import { influx, log, mongoose } from '../../deps.ts'
 import {
 	ApiAuthProvider,
 	ArkiveProvider,
 	DataProvider,
 } from '../providers/interfaces.ts'
 import { MongoDataProvider } from '../providers/mongodb.ts'
-import { getEnv, getSupabaseClient } from '../utils.ts'
+import { filterRawArkives, getEnv, getSupabaseClient } from '../utils.ts'
 import { logger } from '../logger/logger.ts'
 import { SupabaseProvider } from '../providers/supabase.ts'
 import { SupabaseAuthProvider } from '../providers/supabase-auth.ts'
@@ -42,36 +42,18 @@ export class StorageManager {
 		logger('StorageManager').debug('Running checks')
 
 		logger('StorageManager').debug('Fetching deployments')
-		const deployments = await this.#arkiveProvider.getLatestActiveDeployments()
-		const mostLatestDeployments = deployments
-			.filter(({ deployment }) =>
-				deployment.status === 'synced' || deployment.status === 'syncing'
-			)
-			.reduce((acc, curr) => {
-				if (
-					!acc[curr.id] || // if there is no deployment with this id
-					acc[curr.id].deployment.major_version <
-						curr.deployment.major_version || // if the major version is higher
-					(acc[curr.id].deployment.major_version === // if the major version is the same but the minor version is higher
-							curr.deployment.major_version &&
-						acc[curr.id].deployment.minor_version <
-							curr.deployment.minor_version)
-				) {
-					acc[curr.id] = curr
-				}
-				return acc
-			}, {} as Record<string, arkiverTypes.Arkive>)
+		const deployments = await this.#arkiveProvider.getRawArkives()
+		const mostLatestDeployments = filterRawArkives(deployments, ['error', 'paused', 'pending', 'restarting', 'retired'])
 		logger('StorageManager').debug(
 			`Found ${Object.keys(mostLatestDeployments).length} deployments`,
 		)
 		logger('StorageManager').debug(
-			`Deployments: ${
-				Object.values(mostLatestDeployments)
-					.map(
-						({ id, deployment }) =>
-							`${id}@${deployment.major_version}.${deployment.minor_version}`,
-					)
-					.join(', ')
+			`Deployments: ${Object.values(mostLatestDeployments)
+				.map(
+					({ id, deployment }) =>
+						`${id}@${deployment.major_version}.${deployment.minor_version}`,
+				)
+				.join(', ')
 			}`,
 		)
 

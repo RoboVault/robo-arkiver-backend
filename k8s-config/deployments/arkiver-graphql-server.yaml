@@ -14,12 +14,11 @@ spec:
     spec:
       containers:
         - name: arkiver-graphql-server
-          image: arkiver-graphql-server
+          image: 033393603340.dkr.ecr.us-east-1.amazonaws.com/arkiver-graphql-server:latest
           resources:
             limits:
-              memory: "2048Mi"
-              cpu: "1000m"
-          imagePullPolicy: Never
+              memory: "1024Mi"
+              cpu: "500m"
           env:
             - name: SUPABASE_SERVICE_KEY
               valueFrom:

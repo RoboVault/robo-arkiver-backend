@@ -21,10 +21,11 @@ const moduleActors = {
 			name: 'arkive-runner',
 		},
 	],
-	MESSENGER: (redis: redis.Redis) => [
+	MESSENGER: (provider: ArkiveProvider, redis: redis.Redis) => [
 		{
 			actor: new ArkiveMessenger({
-				redis
+				redis,
+				arkiveProvider: provider
 			}),
 			name: 'messenger'
 		}

@@ -1,25 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: messenger
+  name: arkiver-messenger
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: messenger
+      app: arkiver-messenger
   template:
     metadata:
       labels:
-        app: messenger
+        app: arkiver-messenger
     spec:
       containers:
-        - name: messenger
-          image: messenger
+        - name: arkiver-messenger
+          image: 033393603340.dkr.ecr.us-east-1.amazonaws.com/arkiver-messenger:latest
           resources:
             limits:
-              memory: "512Mi"
+              memory: "1024Mi"
               cpu: "500m"
-          imagePullPolicy: Never
           env:
             - name: SUPABASE_SERVICE_KEY
               valueFrom:

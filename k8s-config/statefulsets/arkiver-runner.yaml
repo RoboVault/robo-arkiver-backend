@@ -1,22 +1,25 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: arkive-runner
+  name: arkiver-runner
 spec:
-  serviceName: "arkive-runner"
+  serviceName: "arkiver-runner"
   replicas: 2
   selector:
     matchLabels:
-      app: arkive-runner
+      app: arkiver-runner
   template:
     metadata:
       labels:
-        app: arkive-runner
+        app: arkiver-runner
     spec:
       containers:
-        - name: arkive-runner
-          image: arkive-runner
-          imagePullPolicy: Never
+        - name: arkiver-runner
+          image: 033393603340.dkr.ecr.us-east-1.amazonaws.com/arkiver-runner:latest
+          resources:
+            limits:
+              memory: "2048Mi"
+              cpu: "500m"
           env:
             - name: SUPABASE_SERVICE_KEY
               valueFrom:
@@ -58,3 +61,23 @@ spec:
                 configMapKeyRef:
                   name: env-config
                   key: MESSENGER_REDIS_PORT
+            - name: AVALANCHE_RPC_URL
+              valueFrom:
+                secretKeyRef:
+                  key: AVALANCHE_RPC_URL
+                  name: env-secrets
+            - name: ARBITRUM_RPC_URL
+              valueFrom:
+                secretKeyRef:
+                  key: ARBITRUM_RPC_URL
+                  name: env-secrets
+            - name: OPTIMISM_RPC_URL
+              valueFrom:
+                secretKeyRef:
+                  key: OPTIMISM_RPC_URL
+                  name: env-secrets
+            - name: MUMBAI_RPC_URL
+              valueFrom:
+                secretKeyRef:
+                  key: MUMBAI_RPC_URL
+                  name: env-secrets
