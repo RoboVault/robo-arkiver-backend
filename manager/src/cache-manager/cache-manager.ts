@@ -61,8 +61,8 @@ export class CacheManager {
 
 if (import.meta.main) {
 	const redisClient = await redis.connect({
-		hostname: getEnv('REDIS_HOSTNAME'),
-		port: Number(getEnv('REDIS_PORT')),
+		hostname: getEnv('SERVER_REDIS_HOSTNAME'),
+		port: Number(getEnv('SERVER_REDIS_PORT')),
 	})
 
 	const authProvider = new SupabaseAuthProvider(getSupabaseClient())

@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: arkiver-cache-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: arkiver-cache-manager
+  template:
+    metadata:
+      labels:
+        app: arkiver-cache-manager
+    spec:
+      containers:
+        - name: arkiver-cache-manager
+          image: 033393603340.dkr.ecr.us-east-1.amazonaws.com/arkiver-cache-manager:latest
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          env:
+            - name: SUPABASE_SERVICE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: env-secrets
+                  key: SUPABASE_SERVICE_KEY
+            - name: INFLUX_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: env-config
+                  key: INFLUX_URL
+            - name: INFLUX_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: env-secrets
+                  key: INFLUX_ADMIN_TOKEN
+            - name: INFLUX_ORG
+              valueFrom:
+                configMapKeyRef:
+                  name: env-config
+                  key: INFLUX_ORG
+            - name: INFLUX_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: env-config
+                  key: INFLUX_BUCKET
+            - name: SERVER_REDIS_HOSTNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: env-config
+                  key: SERVER_REDIS_HOSTNAME
+            - name: SERVER_REDIS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: env-config
+                  key: SERVER_REDIS_PORT

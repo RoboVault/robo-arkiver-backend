@@ -102,38 +102,38 @@ export class ArkiveRunner implements ArkiveActor {
 		await this.addDeployment(deployment)
 	}
 
-	async updatedDeploymentHandler(_deployment: arkiverTypes.Arkive) {
-		// switch (deployment.deployment.status) {
-		// 	case 'paused': {
-		// 		const currentDeployment = this.#deployments.find(
-		// 			(a) => a.arkive.deployment.id === deployment.deployment.id,
-		// 		)
-		// 		if (!currentDeployment) break
-		// 		logger('arkive-runner').debug(
-		// 			`pausing arkive ${deployment.id}@${deployment.deployment.major_version}.${deployment.deployment.minor_version}`,
-		// 		)
-		// 		this.removeDeployment(currentDeployment)
-		// 		logger('arkive-runner').info(
-		// 			`paused arkive ${deployment.id}@${deployment.deployment.major_version}.${deployment.deployment.minor_version}`,
-		// 		)
-		// 		break
-		// 	}
-		// 	case 'restarting': {
-		// 		const currentDeployment = this.#deployments.find(
-		// 			(a) => a.arkive.deployment.id === deployment.deployment.id,
-		// 		)
+	async updatedDeploymentHandler(deployment: arkiverTypes.Arkive) {
+		switch (deployment.deployment.status) {
+			case 'paused': {
+				const currentDeployment = this.#deployments.find(
+					(a) => a.arkive.deployment.id === deployment.deployment.id,
+				)
+				if (!currentDeployment) break
+				logger('arkive-runner').debug(
+					`pausing arkive ${deployment.id}@${deployment.deployment.major_version}.${deployment.deployment.minor_version}`,
+				)
+				this.removeDeployment(currentDeployment)
+				logger('arkive-runner').info(
+					`paused arkive ${deployment.id}@${deployment.deployment.major_version}.${deployment.deployment.minor_version}`,
+				)
+				break
+			}
+			case 'restarting': {
+				const currentDeployment = this.#deployments.find(
+					(a) => a.arkive.deployment.id === deployment.deployment.id,
+				)
 
-		// 		if (currentDeployment) {
-		// 			this.removeDeployment(currentDeployment)
-		// 		}
+				if (currentDeployment) {
+					this.removeDeployment(currentDeployment)
+				}
 
-		// 		await this.addDeployment(deployment)
-		// 		logger('arkive-runner').info(
-		// 			`restarted arkive ${deployment.id}@${deployment.deployment.major_version}.${deployment.deployment.minor_version}`,
-		// 		)
-		// 		break
-		// 	}
-		// }
+				await this.addDeployment(deployment)
+				logger('arkive-runner').info(
+					`restarted arkive ${deployment.id}@${deployment.deployment.major_version}.${deployment.deployment.minor_version}`,
+				)
+				break
+			}
+		}
 	}
 
 	spawnArkiverWorker(arkive: arkiverTypes.Arkive) {

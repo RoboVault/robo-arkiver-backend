@@ -1,4 +1,4 @@
-import { arkiverTypes, redis } from "../../deps.ts";
+import { arkiverTypes, redis, delay } from "../../deps.ts";
 import { RawArkive, SupabaseProvider, SupabaseProviderParams } from "./supabase.ts";
 import { MESSENGER_REDIS_KEYS, SUPABASE_TABLES } from "../constants.ts";
 import { filterRawArkives } from "../utils.ts";
@@ -43,7 +43,7 @@ export class RunnerProvider extends SupabaseProvider {
 	public listenNewDeployment(callback: (arkive: arkiverTypes.Arkive) => Promise<void>) {
 		const listen = () => this.#redis.xreadgroup(
 			[{ key: MESSENGER_REDIS_KEYS.NEW_DEPLOYMENTS, xid: '>' }],
-			{ consumer: this.#hostname, group: MESSENGER_REDIS_KEYS.ARKIVE_RUNNERS_GROUP, block: 0 }
+			{ consumer: this.#hostname, group: MESSENGER_REDIS_KEYS.ARKIVE_RUNNERS_GROUP, block: 0, count: 1 }
 		)
 			.then(async (res) => {
 				logger('arkiver-runner').info('New deployment received: ', res)
@@ -70,7 +70,9 @@ export class RunnerProvider extends SupabaseProvider {
 						}
 					}
 				}
-				listen()
+
+				await delay(1000)
+				listen().catch((e) => logger('arkiver-runner').error(e))
 			})
 		listen().catch((e) => logger('arkiver-runner').error(e))
 	}

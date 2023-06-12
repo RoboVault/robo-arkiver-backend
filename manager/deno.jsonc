@@ -11,7 +11,8 @@
 		"https://deno.land/x/robo_arkiver@v0.3.6/": "https://deno.land/x/robo_arkiver/",
 		"https://deno.land/x/robo_arkiver@v0.3.3/": "https://deno.land/x/robo_arkiver/",
 		"https://deno.land/x/robo_arkiver@v0.4.0/": "https://deno.land/x/robo_arkiver/",
-		"https://deno.land/x/robo_arkiver@v0.4.4/": "https://deno.land/x/robo_arkiver/"
+		"https://deno.land/x/robo_arkiver@v0.4.4/": "https://deno.land/x/robo_arkiver/",
+		"npm:ethers@6.1.0": "npm:ethers"
 	},
 	"fmt": {
 		"options": {

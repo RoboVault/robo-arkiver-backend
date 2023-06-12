@@ -13,3 +13,4 @@ export * as logHandlers from 'https://deno.land/std@0.181.0/log/handlers.ts'
 export * as influx from 'npm:@influxdata/influxdb-client'
 export * as path from 'https://deno.land/std@0.183.0/path/mod.ts'
 export * as redis from 'https://deno.land/x/redis@v0.29.4/mod.ts'
+export { delay } from "https://deno.land/std@0.189.0/async/delay.ts"
