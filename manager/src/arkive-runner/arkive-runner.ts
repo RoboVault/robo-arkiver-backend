@@ -1,5 +1,5 @@
 
-import { arkiverTypes, mongoose, redis } from '../../deps.ts'
+import { arkiverTypes, mongoose, redis, delay } from '../../deps.ts'
 import { MESSENGER_REDIS_KEYS } from '../constants.ts'
 import { logger } from '../logger/logger.ts'
 import { ArkiveMessageEvent, NewArkiveMessageEvent } from '../manager/types.ts'
@@ -80,29 +80,12 @@ export class ArkiveRunner implements ArkiveActor {
 	}
 
 	async newDeploymentHandler(deployment: arkiverTypes.Arkive) {
-		// only remove previous versions if on the same major version.
-		// old major versions will be removed once the new version is synced
-		const previousDeployments = this.getPreviousDeployments(deployment)
-		const sameMajor = previousDeployments.filter(
-			(a) =>
-				a.arkive.deployment.major_version ===
-				deployment.deployment.major_version,
-		)
-		// remove old minor versions
-		for (const deployment of sameMajor) {
-			this.removeDeployment(deployment)
-			this.#arkiveProvider.updateDeploymentStatus(deployment.arkive, 'retired')
-				.catch((e) => {
-					logger('arkive-runner').error(
-						`Error updating deployment status: ${e}`,
-					)
-				})
-		}
-
+		await delay(3000) // wait until any previous deployments are removed
 		await this.addDeployment(deployment)
 	}
 
 	async updatedDeploymentHandler(deployment: arkiverTypes.Arkive) {
+		// this handler never gets called in a multiple-runners setup, the messenger takes care of adding and removing deployments
 		switch (deployment.deployment.status) {
 			case 'paused': {
 				const currentDeployment = this.#deployments.find(
@@ -173,26 +156,6 @@ export class ArkiveRunner implements ArkiveActor {
 					`Arkive synced: ${e.data.data.arkive.id}@${e.data.data.arkive.deployment.major_version}.${e.data.data.arkive.deployment.minor_version}`,
 				)
 				try {
-					const previousVersions = this.getPreviousDeployments(
-						e.data.data.arkive,
-					)
-					for (const previousVersion of previousVersions) {
-						// check if previous version is an older major version
-						if (
-							previousVersion.arkive.deployment.major_version <
-							arkive.deployment.major_version
-						) {
-							logger('arkive-runner').info(
-								'removing old major version',
-								previousVersion.arkive,
-							)
-							this.removeDeployment(previousVersion)
-							await this.#arkiveProvider.updateDeploymentStatus(
-								previousVersion.arkive,
-								'retired',
-							)
-						}
-					}
 					await this.#arkiveProvider.updateDeploymentStatus(
 						e.data.data.arkive,
 						'synced',
@@ -238,21 +201,6 @@ export class ArkiveRunner implements ArkiveActor {
 		this.#redis.srem(`${MESSENGER_REDIS_KEYS.ACTIVE_DEPLOYMENTS}:${this.#hostname}`, deployment.arkive.deployment.id).catch((e) => {
 			logger('arkive-runner').error(e)
 		})
-	}
-
-	getPreviousDeployments(deployment: arkiverTypes.Arkive) {
-		return this.#deployments.filter(
-			(a) =>
-				a.arkive.id === deployment.id &&
-				(
-					(a.arkive.deployment.major_version <
-						deployment.deployment.major_version) ||
-					(a.arkive.deployment.major_version === // same major version but older minor version
-						deployment.deployment.major_version &&
-						a.arkive.deployment.minor_version <
-						deployment.deployment.minor_version)
-				),
-		)
 	}
 
 	cleanUp() {

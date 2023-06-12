@@ -15,4 +15,4 @@ RUN deno cache deps.ts
 ADD . .
 RUN deno cache main.ts
 
-CMD ["run", "-A", "--unstable", "main.ts"]
+CMD ["run", "-A", "--unstable", "--lock-write", "main.ts"]

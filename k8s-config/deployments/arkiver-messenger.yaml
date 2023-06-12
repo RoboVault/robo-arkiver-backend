@@ -15,10 +15,6 @@ spec:
       containers:
         - name: arkiver-messenger
           image: 033393603340.dkr.ecr.us-east-1.amazonaws.com/arkiver-messenger:latest
-          resources:
-            limits:
-              memory: "1024Mi"
-              cpu: "500m"
           env:
             - name: SUPABASE_SERVICE_KEY
               valueFrom:

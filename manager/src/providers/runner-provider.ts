@@ -26,7 +26,7 @@ export class RunnerProvider extends SupabaseProvider {
 		const { data, error } = await this.supabase
 			.from(SUPABASE_TABLES.ARKIVE)
 			// deno-lint-ignore no-explicit-any
-			.select<any, RawArkive>(`*, ${SUPABASE_TABLES.DEPLOYMENTS}!inner(*)`)
+			.select<any, RawArkive>(`*, ${SUPABASE_TABLES.DEPLOYMENTS}!inner!${SUPABASE_TABLES.DEPLOYMENTS}_${SUPABASE_TABLES.ARKIVE}_id_fkey(*)`)
 			.in(`${SUPABASE_TABLES.DEPLOYMENTS}.id`, deploymentIds)
 
 		if (error) {
@@ -78,16 +78,18 @@ export class RunnerProvider extends SupabaseProvider {
 	}
 
 	public listenDeletedDeployment(callback: (deploymentId: number) => void) {
-		const listen = () =>
-			this.#redis.xread([{ key: MESSENGER_REDIS_KEYS.DELETED_DEPLOYMENTS, xid: '$' }], { block: 0 }).then((res) => {
+		const listen = (latestId: string) =>
+			this.#redis.xread([{ key: MESSENGER_REDIS_KEYS.DELETED_DEPLOYMENTS, xid: latestId }], { block: 0 }).then((res) => {
 				const deletedDeploymentIds = res[0]?.messages?.map((message) => message.fieldValues.deploymentId)
 
 				for (const deploymentId of deletedDeploymentIds) {
 					callback(parseInt(deploymentId))
 				}
-				listen()
+				const messages = res[0]?.messages
+				const xid = messages?.at(-1)?.xid
+				listen(xid ? `${xid.unixMs}-${xid.seqNo}` : latestId).catch((e) => logger('arkiver-runner').error(e))
 			})
-		listen().catch((e) => logger('arkiver-runner').error(e))
+		listen("$").catch((e) => logger('arkiver-runner').error(e))
 	}
 
 	public listenUpdatedDeployment(_callback: (deployment: arkiverTypes.Arkive) => void | Promise<void>): void { }

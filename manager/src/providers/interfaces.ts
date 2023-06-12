@@ -28,6 +28,9 @@ export interface ArkiveProvider {
 		arkive: arkiverTypes.Arkive,
 		status: arkiverTypes.Deployment['status'],
 	): Promise<void>
+	updateArkiveMainDeployment(
+		deployment: arkiverTypes.Arkive,
+	): Promise<void>
 	getUsername(userId: string): Promise<string>
 	cleanUp(): Promise<void> | void
 }

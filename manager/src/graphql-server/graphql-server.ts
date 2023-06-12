@@ -11,7 +11,7 @@ import {
 } from '../../deps.ts'
 import { ERROR_CODES } from '../constants.ts'
 import { logger } from '../logger/logger.ts'
-import { filterRawArkives, getEnv } from '../utils.ts'
+import { getEnv } from '../utils.ts'
 import { arkivesDir } from '../manager/manager.ts'
 import { apiKeyLimiter, createIpLimiter } from './rate-limiter.ts'
 import {
@@ -22,6 +22,10 @@ import {
 import { SupabaseAuthProvider } from '../providers/supabase-auth.ts'
 import { RawArkive, SupabaseProvider } from '../providers/supabase.ts'
 
+type ArkiveWithMainDeploymentId = arkiverTypes.Arkive & {
+	main_deployment_id: number
+}
+
 export class GraphQLServer implements ArkiveActor {
 	private pathToYoga: Map<
 		string,
@@ -31,7 +35,6 @@ export class GraphQLServer implements ArkiveActor {
 			arkive: arkiverTypes.Arkive
 		}
 	> = new Map()
-	private arkiveIdToHighestVersion: Map<number, number> = new Map()
 	private apiAuthProvider: ApiAuthProvider
 	private arkiveProvider: ArkiveProvider
 	private redis?: redis.Redis
@@ -71,10 +74,18 @@ export class GraphQLServer implements ArkiveActor {
 	}
 
 	async initializeDeployments(rawArkives: RawArkive[]) {
-		const deployments = filterRawArkives(rawArkives, ['retired'])
+		const deployments: (ArkiveWithMainDeploymentId)[] = rawArkives
+			.flatMap((rawArkive) =>
+				rawArkive.deployments.map((deployment) => ({
+					...rawArkive,
+					deployment
+				}))
+			)
+			.filter(({ deployment }) => deployment.status !== 'retired')
+
 		await Promise.all(
 			deployments.map((arkive) =>
-				this.addDeployment(arkive)
+				this.addDeployment(arkive, { mainDeployment: arkive.main_deployment_id === arkive.deployment.id })
 			),
 		)
 	}
@@ -107,35 +118,48 @@ export class GraphQLServer implements ArkiveActor {
 	): Promise<void> {
 		switch (arkive.deployment.status) {
 			case 'retired': {
-				const highestVersion = this.arkiveIdToHighestVersion.get(
-					arkive.id,
-				)
 				const username = await this.arkiveProvider.getUsername(arkive.user_id)
-				if (
-					highestVersion && highestVersion == arkive.deployment.major_version
-				) {
-					const key = `${username}/${arkive.name}/graphql`
-					const highestYoga = this.pathToYoga.get(key)
-					if (
-						highestYoga &&
-						highestYoga.arkive.deployment.id == arkive.deployment.id
-					) {
-						logger('graphql-server').info(
-							`[GraphQL Server] Removing arkive: ${key}`,
-						)
-						this.pathToYoga.delete(key)
-					}
+
+				let key =
+					`${username}/${arkive.name}/${arkive.deployment.major_version}/graphql`
+				let handler = this.pathToYoga.get(key)
+				if (handler && arkive.deployment.id === handler.arkive.deployment.id) {
+					logger('graphql-server').info(
+						`[GraphQL Server] Removing arkive: ${key}`,
+					)
+					this.pathToYoga.delete(key)
 				}
-				const key =
-					`${username}/${arkive.id}/${arkive.deployment.major_version}/graphql`
-				this.pathToYoga.delete(key)
+
+				key =
+					`${username}/${arkive.name}/graphql`
+				handler = this.pathToYoga.get(key)
+				if (handler && arkive.deployment.id === handler.arkive.deployment.id) {
+					logger('graphql-server').info(
+						`[GraphQL Server] Removing arkive: ${key}`,
+					)
+					this.pathToYoga.delete(key)
+				}
+				break
+			}
+			case 'synced': {
+				if ((arkive as ArkiveWithMainDeploymentId).main_deployment_id === arkive.deployment.id) {
+					await this.addDeployment(arkive, { mainDeployment: true })
+				}
 			}
 		}
 	}
 
-	async addDeployment(arkive: arkiverTypes.Arkive) {
-		await this.arkiveProvider.pullDeployment(arkive)
+	async addDeployment(arkive: arkiverTypes.Arkive, opts?: { mainDeployment?: boolean }) {
 		const username = await this.arkiveProvider.getUsername(arkive.user_id)
+		if (!opts?.mainDeployment) {
+			const handler = this.pathToYoga.get(
+				`${username}/${arkive.name}/${arkive.deployment.major_version}/graphql`,
+			)
+			if (handler && arkive.deployment.major_version === handler.arkive.deployment.major_version && arkive.deployment.minor_version < handler.arkive.deployment.minor_version) {
+				return
+			}
+		}
+		await this.arkiveProvider.pullDeployment(arkive)
 		const manifestPath = new URL(
 			denoPath.join(
 				arkivesDir,
@@ -201,36 +225,28 @@ export class GraphQLServer implements ArkiveActor {
 
 		const path = `/${username}/${arkive.name}`
 		const pathWithVersion = `${path}/${arkive.deployment.major_version}`
+		if (opts?.mainDeployment) {
+			const yoga = grapQLYoga.createYoga({
+				...options,
+				graphqlEndpoint: `${path}/graphql`,
+			})
+			this.pathToYoga.set(`${path}/graphql`, { handler: yoga, arkive })
+			logger('graphql-server').info(
+				`[GraphQL Server] Updating highest version for ${path} to ${arkive.deployment.major_version}`,
+			)
+		}
 		logger('graphql-server').info(
 			`[GraphQL Server] Adding new arkive: ${pathWithVersion}`,
 		)
-
 		const yogaWithVersion = grapQLYoga.createYoga({
 			...options,
 			graphqlEndpoint: `${pathWithVersion}/graphql`,
-		})
-		const yoga = grapQLYoga.createYoga({
-			...options,
-			graphqlEndpoint: `${path}/graphql`,
 		})
 
 		this.pathToYoga.set(`${pathWithVersion}/graphql`, {
 			handler: yogaWithVersion,
 			arkive,
 		})
-
-		const highestVersion = this.arkiveIdToHighestVersion.get(arkive.id)
-
-		if (!highestVersion || highestVersion < arkive.deployment.major_version) {
-			this.arkiveIdToHighestVersion.set(
-				arkive.id,
-				arkive.deployment.major_version,
-			)
-			this.pathToYoga.set(`${path}/graphql`, { handler: yoga, arkive })
-			logger('graphql-server').info(
-				`[GraphQL Server] Updating highest version for ${path} to ${arkive.deployment.major_version}`,
-			)
-		}
 	}
 
 	async handleRequest(req: Request, connInfo: http.ConnInfo) {
