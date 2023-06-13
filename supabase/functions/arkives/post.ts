@@ -31,16 +31,16 @@ export const post = async (
 	}
 
 	// check if arkive already exists
+	const select = 'id, environment, deployments!deployments_arkive_id_fkey(major_version, minor_version)'
 	const selectRes = await supabase
 		.from(SUPABASE_TABLES.ARKIVE)
-		.select<
-			'id, environment, deployments(major_version, minor_version)',
+		.select<typeof select,
 			{
 				id: string
 				environment: string
 				deployments: { major_version: number; minor_version: number }[]
 			}
-		>('id, environment, deployments(major_version, minor_version)')
+		>(select)
 		.eq('user_id', userId)
 		.eq('name', name)
 

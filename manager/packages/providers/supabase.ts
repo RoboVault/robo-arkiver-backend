@@ -24,7 +24,7 @@ export class SupabaseProvider implements ArkiveProvider {
 	}
 
 	public async getDeployments(): Promise<arkiverTypes.Arkive[]> {
-    const select = '*, deployments!deployments_arkive_id_fkey(*)'
+		const select = '*, deployments!deployments_arkive_id_fkey(*)'
 		const arkivesRes = await this.supabase
 			.from(SUPABASE_TABLES.ARKIVE)
 			.select<typeof select, RawArkive>(select)
