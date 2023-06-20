@@ -74,13 +74,13 @@ export class RunnerProvider extends SupabaseProvider {
 				},
 			)
 				.then(async (res) => {
-					logger('runner-provider').info('New deployment received: ', res)
 					const newDeploymentIds = res[0]?.messages?.map((message) => ({
 						deploymentId: message.fieldValues.deploymentId,
 						messageId: message.xid,
 					}))
 
 					if (newDeploymentIds) {
+						logger('runner-provider').info('New deployment received: ', res)
 						for (const { deploymentId, messageId } of newDeploymentIds) {
 							const { data, error } = await this.supabase
 								.from(SUPABASE_TABLES.ARKIVE)
