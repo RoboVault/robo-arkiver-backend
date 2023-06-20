@@ -2,7 +2,7 @@
 import { SupabaseClient, z } from '../_shared/deps.ts'
 import { Arkive, parseSerializedManifest } from '../_shared/types.ts'
 import { HttpError } from '../_shared/http_error.ts'
-import { SUPABASE_TABLES } from '../../../manager/packages/constants.ts'
+import { SUPABASE_TABLES } from '../../../manager/src/constants.ts'
 
 export const postSchema = z.object({
 	name: z.string(),
@@ -34,13 +34,13 @@ export const post = async (
 	const selectRes = await supabase
 		.from(SUPABASE_TABLES.ARKIVE)
 		.select<
-			'id, environment, deployments(major_version, minor_version)',
+			string,
 			{
 				id: string
 				environment: string
 				deployments: { major_version: number; minor_version: number }[]
 			}
-		>('id, environment, deployments(major_version, minor_version)')
+		>('id, environment, deployments!deployments_arkive_id_fkey(major_version, minor_version)')
 		.eq('user_id', userId)
 		.eq('name', name)
 

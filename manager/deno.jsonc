@@ -1,8 +1,8 @@
 {
 	"tasks": {
-		"graphql": "MODULE=GRAPHQL_SERVER deno run -A --unstable main.ts",
-		"runner": "MODULE=ARKIVE_RUNNER deno run -A --unstable main.ts",
-		"messenger": "MODULE=MESSENGER deno run -A --unstable main.ts",
+		"graphql": "MODULE=GRAPHQL_SERVER deno run -A --unstable --lock-write main.ts",
+		"runner": "MODULE=ARKIVE_RUNNER deno run -A --unstable --lock-write main.ts",
+		"messenger": "MODULE=MESSENGER deno run -A --unstable --lock-write main.ts",
 		"build:graphql": "docker build -t arkiver-graphql-server -f ../dockerfiles/graphql-server/Dockerfile .",
 		"build:runner": "docker build -t arkive-runner -f ../dockerfiles/arkive-runner/Dockerfile .",
 		"build:messenger": "docker build -t messenger -f ../dockerfiles/messenger/Dockerfile ."

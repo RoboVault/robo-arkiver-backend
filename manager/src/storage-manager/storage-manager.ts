@@ -43,17 +43,24 @@ export class StorageManager {
 
 		logger('StorageManager').debug('Fetching deployments')
 		const deployments = await this.#arkiveProvider.getRawArkives()
-		const mostLatestDeployments = filterRawArkives(deployments, ['error', 'paused', 'pending', 'restarting', 'retired'])
+		const mostLatestDeployments = filterRawArkives(deployments, [
+			'error',
+			'paused',
+			'pending',
+			'restarting',
+			'retired',
+		])
 		logger('StorageManager').debug(
 			`Found ${Object.keys(mostLatestDeployments).length} deployments`,
 		)
 		logger('StorageManager').debug(
-			`Deployments: ${Object.values(mostLatestDeployments)
-				.map(
-					({ id, deployment }) =>
-						`${id}@${deployment.major_version}.${deployment.minor_version}`,
-				)
-				.join(', ')
+			`Deployments: ${
+				Object.values(mostLatestDeployments)
+					.map(
+						({ id, deployment }) =>
+							`${id}@${deployment.major_version}.${deployment.minor_version}`,
+					)
+					.join(', ')
 			}`,
 		)
 
@@ -121,7 +128,7 @@ if (import.meta.main) {
 		},
 		loggers: {
 			StorageManager: {
-				handlers: ['console'],
+				handlers: ['console', 'influx'],
 				level: 'DEBUG',
 			},
 		},

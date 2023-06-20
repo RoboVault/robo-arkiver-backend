@@ -13,6 +13,6 @@ COPY deps.ts .
 RUN deno cache deps.ts
 
 ADD . .
-RUN deno cache main.ts
+RUN deno cache --lock-write main.ts
 
 CMD ["run", "-A", "--unstable", "main.ts"]

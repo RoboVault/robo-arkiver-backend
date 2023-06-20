@@ -1,5 +1,4 @@
-
-import { arkiverTypes, mongoose, redis, delay } from '../../deps.ts'
+import { arkiverTypes, delay, mongoose, redis } from '../../deps.ts'
 import { MESSENGER_REDIS_KEYS } from '../constants.ts'
 import { logger } from '../logger/logger.ts'
 import { ArkiveMessageEvent, NewArkiveMessageEvent } from '../manager/types.ts'
@@ -14,7 +13,7 @@ export class ArkiveRunner implements ArkiveActor {
 	#redis: redis.Redis
 	#hostname: string
 
-	constructor(params: { arkiveProvider: ArkiveProvider, redis: redis.Redis }) {
+	constructor(params: { arkiveProvider: ArkiveProvider; redis: redis.Redis }) {
 		this.#arkiveProvider = params.arkiveProvider
 		this.#rpcUrls = collectRpcUrls()
 		this.#redis = params.redis
@@ -29,19 +28,26 @@ export class ArkiveRunner implements ArkiveActor {
 
 	async initializeDeployments(rawArkives: RawArkive[]) {
 		const deployments = filterRawArkives(rawArkives, [
-			'error', 'paused', 'retired',
+			'error',
+			'paused',
+			'retired',
 		])
 		await Promise.all(
 			deployments.map((deployment) => this.addDeployment(deployment)),
 		)
 
 		const toDelete = rawArkives.flatMap(
-			(a) => a.deployments.filter(
-				(d) => ['error', 'paused', 'retired'].includes(d.status))
+			(a) =>
+				a.deployments.filter(
+					(d) => ['error', 'paused', 'retired'].includes(d.status),
+				),
 		)
 
 		await Promise.all(toDelete.map((deployment) => {
-			this.#redis.srem(`${MESSENGER_REDIS_KEYS.ACTIVE_DEPLOYMENTS}:${this.#hostname}`, deployment.id)
+			this.#redis.srem(
+				`${MESSENGER_REDIS_KEYS.ACTIVE_DEPLOYMENTS}:${this.#hostname}`,
+				deployment.id,
+			)
 		}))
 	}
 
@@ -55,8 +61,12 @@ export class ArkiveRunner implements ArkiveActor {
 		this.#arkiveProvider.updateDeploymentStatus(arkive, 'syncing').catch((e) =>
 			logger('arkive-runner').error(e, {
 				source: 'ArkiveRunner.addDeployment',
-			}))
-		this.#redis.sadd(`${MESSENGER_REDIS_KEYS.ACTIVE_DEPLOYMENTS}:${this.#hostname}`, arkive.deployment.id).catch((e) => {
+			})
+		)
+		this.#redis.sadd(
+			`${MESSENGER_REDIS_KEYS.ACTIVE_DEPLOYMENTS}:${this.#hostname}`,
+			arkive.deployment.id,
+		).catch((e) => {
 			logger('arkive-runner').error(e, {
 				source: 'ArkiveRunner.addDeployment',
 			})
@@ -191,14 +201,19 @@ export class ArkiveRunner implements ArkiveActor {
 		return worker
 	}
 
-	removeDeployment(deployment: { arkive: arkiverTypes.Arkive; worker: Worker }) {
+	removeDeployment(
+		deployment: { arkive: arkiverTypes.Arkive; worker: Worker },
+	) {
 		logger('arkive-runner').info('Removing deployment', deployment)
 
 		deployment.worker.terminate()
 		this.#deployments = this.#deployments.filter((a) =>
 			a.arkive.deployment.id !== deployment.arkive.deployment.id
 		)
-		this.#redis.srem(`${MESSENGER_REDIS_KEYS.ACTIVE_DEPLOYMENTS}:${this.#hostname}`, deployment.arkive.deployment.id).catch((e) => {
+		this.#redis.srem(
+			`${MESSENGER_REDIS_KEYS.ACTIVE_DEPLOYMENTS}:${this.#hostname}`,
+			deployment.arkive.deployment.id,
+		).catch((e) => {
 			logger('arkive-runner').error(e)
 		})
 	}

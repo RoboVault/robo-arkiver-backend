@@ -13,6 +13,6 @@ COPY deps.ts .
 RUN deno cache deps.ts
 
 ADD . .
-RUN deno cache src/storage-manager/storage-manager.ts
+RUN deno cache --lock-write src/storage-manager/storage-manager.ts
 
 CMD ["run", "-A", "--unstable", "src/storage-manager/storage-manager.ts"]

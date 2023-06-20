@@ -1,7 +1,7 @@
 import { redis, supabase } from '../../deps.ts'
 import { ArkiveRunner } from '../arkive-runner/arkive-runner.ts'
 import { GraphQLServer } from '../graphql-server/graphql-server.ts'
-import { ArkiveMessenger } from "../messenger/messenger.ts";
+import { ArkiveMessenger } from '../messenger/messenger.ts'
 import { ArkiveProvider } from '../providers/interfaces.ts'
 import { moduleConfig } from './utils.ts'
 
@@ -16,28 +16,28 @@ const moduleActors = {
 		{
 			actor: new ArkiveRunner({
 				arkiveProvider: provider,
-				redis
+				redis,
 			}),
-			name: 'arkive-runner',
+			name: moduleConfig['ARKIVE_RUNNER'].name,
 		},
 	],
 	MESSENGER: (provider: ArkiveProvider, redis: redis.Redis) => [
 		{
 			actor: new ArkiveMessenger({
 				redis,
-				arkiveProvider: provider
+				arkiveProvider: provider,
 			}),
-			name: 'messenger'
-		}
+			name: moduleConfig['MESSENGER'].name,
+		},
 	],
 	GRAPHQL_SERVER: (
 		params: { environment: string; supabase: supabase.SupabaseClient },
 	) => [
-			{
-				actor: new GraphQLServer({
-					...params,
-				}),
-				name: 'graphql-server',
-			},
-		],
+		{
+			actor: new GraphQLServer({
+				...params,
+			}),
+			name: moduleConfig['GRAPHQL_SERVER'].name,
+		},
+	],
 } as const

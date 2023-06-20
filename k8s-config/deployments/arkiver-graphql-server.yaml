@@ -25,6 +25,11 @@ spec:
                 secretKeyRef:
                   name: env-secrets
                   key: SUPABASE_SERVICE_KEY
+            - name: ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: env-config
+                  key: ENVIRONMENT
             - name: MONGO_CONNECTION
               valueFrom:
                 secretKeyRef:

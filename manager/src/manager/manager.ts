@@ -58,7 +58,9 @@ export class ArkiveManager {
 			logger(this.name).info('Deleted deployment: ', deploymentId)
 			try {
 				await Promise.all(
-					this.actors.map((actor) => actor.deletedDeploymentHandler(deploymentId)),
+					this.actors.map((actor) =>
+						actor.deletedDeploymentHandler(deploymentId)
+					),
 				)
 			} catch (e) {
 				logger(this.name).error(e, {
@@ -71,7 +73,7 @@ export class ArkiveManager {
 
 	private listenForUpdatedDeployments() {
 		this.arkiveProvider.listenUpdatedDeployment(async (arkive) => {
-			logger(this.name).info('Updated deployment: ', arkive)
+			logger(this.name).info(`Updated deployment: ${arkive}`)
 			try {
 				await Promise.all(
 					this.actors.map((actor) => actor.updatedDeploymentHandler(arkive)),
@@ -88,7 +90,9 @@ export class ArkiveManager {
 	private async initializeRawArkives(rawArkives: RawArkive[]) {
 		logger(this.name).info('Initializing raw arkives', rawArkives)
 		try {
-			await Promise.all(this.actors.map((a) => a.initializeDeployments(rawArkives)))
+			await Promise.all(
+				this.actors.map((a) => a.initializeDeployments(rawArkives)),
+			)
 		} catch (e) {
 			logger(this.name).error(e, {
 				source: 'ArkiveManager.initializeRawArkives',

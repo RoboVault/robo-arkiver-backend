@@ -1,4 +1,4 @@
-import { SUPABASE_TABLES } from '../../../manager/packages/constants.ts'
+import { SUPABASE_TABLES } from '../../../manager/src/constants.ts'
 import { SupabaseClient, z } from '../_shared/deps.ts'
 import { Arkive } from '../_shared/types.ts'
 

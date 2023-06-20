@@ -20,6 +20,11 @@ spec:
               memory: "512Mi"
               cpu: "500m"
           env:
+            - name: ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: env-config
+                  key: ENVIRONMENT
             - name: SUPABASE_SERVICE_KEY
               valueFrom:
                 secretKeyRef:

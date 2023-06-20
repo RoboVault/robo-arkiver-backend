@@ -5,7 +5,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { getEnv } from '../_shared/utils.ts'
 import { createClient } from '../_shared/deps.ts'
-import { SUPABASE_TABLES } from '../../../manager/packages/constants.ts'
+import { SUPABASE_TABLES } from '../../../manager/src/constants.ts'
 
 serve(async (req) => {
 	const { username } = await req.json()

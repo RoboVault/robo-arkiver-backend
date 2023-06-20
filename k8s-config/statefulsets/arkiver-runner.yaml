@@ -17,6 +17,11 @@ spec:
         - name: arkiver-runner
           image: 033393603340.dkr.ecr.us-east-1.amazonaws.com/arkiver-runner:latest
           env:
+            - name: ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: env-config
+                  key: ENVIRONMENT
             - name: SUPABASE_SERVICE_KEY
               valueFrom:
                 secretKeyRef:

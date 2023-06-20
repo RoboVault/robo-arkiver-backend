@@ -11,3 +11,4 @@ data:
   INFLUX_ORG: "arkiver"
   INFLUX_BUCKET: "logs"
   INFLUX_RETENTION: "3d"
+  ENVIRONMENT: "kube"

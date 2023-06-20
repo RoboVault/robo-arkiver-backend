@@ -3,14 +3,21 @@ import { arkiverTypes, path as denoPath, supabase } from '../../deps.ts'
 import { rm, unpack } from '../utils.ts'
 import { arkivesDir } from '../manager/manager.ts'
 import { logger } from '../logger/logger.ts'
-import { SUPABASE_TABLES } from '../constants.ts'
+import {
+	DEPLOYMENTS_SELECTOR,
+	INNER_DEPLOYMENTS_SELECTOR,
+	SUPABASE_TABLES,
+} from '../constants.ts'
 
 export interface RawArkive extends Omit<arkiverTypes.Arkive, 'deployment'> {
 	main_deployment_id: number
 	deployments: arkiverTypes.Deployment[]
 }
 
-export interface SupabaseProviderParams { environment: string; supabase: supabase.SupabaseClient }
+export interface SupabaseProviderParams {
+	environment: string
+	supabase: supabase.SupabaseClient
+}
 
 export class SupabaseProvider implements ArkiveProvider {
 	protected supabase: supabase.SupabaseClient
@@ -29,7 +36,9 @@ export class SupabaseProvider implements ArkiveProvider {
 	public async getRawArkives() {
 		const arkivesRes = await this.supabase
 			.from(SUPABASE_TABLES.ARKIVE)
-			.select<`*, ${typeof SUPABASE_TABLES.DEPLOYMENTS}!${typeof SUPABASE_TABLES.DEPLOYMENTS}_${typeof SUPABASE_TABLES.ARKIVE}_id_fkey(*)`, RawArkive>(`*, ${SUPABASE_TABLES.DEPLOYMENTS}!${SUPABASE_TABLES.DEPLOYMENTS}_${SUPABASE_TABLES.ARKIVE}_id_fkey(*)`)
+			.select<string, RawArkive>(
+				`*, ${DEPLOYMENTS_SELECTOR}`,
+			)
 			.eq('environment', this.environment)
 
 		if (arkivesRes.error) {
@@ -39,10 +48,14 @@ export class SupabaseProvider implements ArkiveProvider {
 		return arkivesRes.data
 	}
 
-	public async getDeployment(deploymentId: number): Promise<arkiverTypes.Arkive | null> {
+	public async getDeployment(
+		deploymentId: number,
+	): Promise<arkiverTypes.Arkive | null> {
 		const { data, error } = await this.supabase
 			.from(SUPABASE_TABLES.ARKIVE)
-			.select<`*, ${typeof SUPABASE_TABLES.DEPLOYMENTS}!inner(*)`, RawArkive>(`*, ${SUPABASE_TABLES.DEPLOYMENTS}!inner(*)`)
+			.select<string, RawArkive>(
+				`*, ${INNER_DEPLOYMENTS_SELECTOR}`,
+			)
 			.eq(`${SUPABASE_TABLES.DEPLOYMENTS}.id`, deploymentId)
 
 		if (error) {
@@ -53,14 +66,17 @@ export class SupabaseProvider implements ArkiveProvider {
 			return null
 		}
 
-		if (!data || data.length === 0 || !data[0].deployments || data[0].deployments.length === 0) {
+		if (
+			!data || data.length === 0 || !data[0].deployments ||
+			data[0].deployments.length === 0
+		) {
 			return null
 		}
 
 		const arkive = data[0]
 		return {
 			...arkive,
-			deployment: arkive.deployments[0]
+			deployment: arkive.deployments[0],
 		}
 	}
 
@@ -207,15 +223,15 @@ export class SupabaseProvider implements ArkiveProvider {
 		const { error } = await this.supabase
 			.from(SUPABASE_TABLES.DEPLOYMENTS)
 			.update({ status })
-			.eq('arkive_id', arkive.id)
-			.eq('major_version', arkive.deployment.major_version)
-			.eq('minor_version', arkive.deployment.minor_version)
+			.eq('id', arkive.deployment.id)
 		if (error) {
 			throw error
 		}
 	}
 
-	public async updateArkiveMainDeployment(deployment: arkiverTypes.Arkive): Promise<void> {
+	public async updateArkiveMainDeployment(
+		deployment: arkiverTypes.Arkive,
+	): Promise<void> {
 		const { error } = await this.supabase
 			.from(SUPABASE_TABLES.ARKIVE)
 			.update({ main_deployment_id: deployment.deployment.id })

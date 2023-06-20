@@ -1,8 +1,8 @@
 import 'https://deno.land/std@0.189.0/dotenv/load.ts'
-import { getSupabaseClient, rm, unpack } from '../manager/packages/utils.ts'
-import { SUPABASE_TABLES } from '../manager/packages/constants.ts'
+import { getSupabaseClient, rm, unpack } from '../manager/src/utils.ts'
+import { SUPABASE_TABLES } from '../manager/src/constants.ts'
 import { path as denoPath } from '../manager/deps.ts'
-import { RawArkive } from '../manager/packages/providers/supabase.ts'
+import { RawArkive } from '../manager/src/providers/supabase.ts'
 import {
 	JSONBigIntReplacer,
 	parseArkiveManifest,
