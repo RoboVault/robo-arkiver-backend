@@ -1,12 +1,5 @@
-import {
-	Context,
-	cors,
-	createClient,
-	Hono,
-	serve,
-	validator,
-} from '../_shared/deps.ts'
-import { getEnv } from '../_shared/utils.ts'
+import { cors, Hono, serve, validator } from '../_shared/deps.ts'
+import { getSupabaseClient } from '../_shared/utils.ts'
 import { del } from './delete.ts'
 import { get } from './get.ts'
 import { patch, patchSchema } from './patch.ts'
@@ -15,6 +8,7 @@ import { post, postSchema } from './post.ts'
 const app = new Hono()
 
 app
+	.basePath('/arkives')
 	.use(
 		'*',
 		cors({
@@ -27,7 +21,7 @@ app
 			],
 		}),
 	)
-	.get('/arkives/:username/:arkivename', async (c) => {
+	.get('/:username/:arkivename', async (c) => {
 		const { arkivename, username } = c.req.param()
 		const minimal = c.req.query('minimal') === 'true'
 		const supabase = getSupabaseClient(c)
@@ -41,7 +35,7 @@ app
 
 		return c.json(data)
 	})
-	.get('/arkives/:username', async (c) => {
+	.get('/:username', async (c) => {
 		const username = c.req.param('username')
 		const minimal = c.req.query('minimal') === 'true'
 		const publicOnly = c.req.query('publicOnly') === 'true'
@@ -55,7 +49,7 @@ app
 
 		return c.json(data)
 	})
-	.get('/arkives', async (c) => {
+	.get('/', async (c) => {
 		const minimal = c.req.query('minimal') === 'true'
 		const publicOnly = c.req.query('publicOnly') === 'true'
 		const supabase = getSupabaseClient(c)
@@ -68,7 +62,7 @@ app
 		return c.json(data)
 	})
 	.post(
-		'/arkives',
+		'/',
 		validator(
 			'form',
 			(value, c) => {
@@ -94,7 +88,7 @@ app
 		},
 	)
 	.patch(
-		'/arkives/:arkivename',
+		'/:arkivename',
 		validator('form', (value, c) => {
 			const parsed = patchSchema.safeParse(value)
 			if (!parsed.success) return c.json(parsed.error.format(), 400)
@@ -118,7 +112,7 @@ app
 			return c.json(data)
 		},
 	)
-	.delete('/arkives/:arkivename', async (c) => {
+	.delete('/:arkivename', async (c) => {
 		const arkivename = c.req.param('arkivename')
 		const supabase = getSupabaseClient(c)
 
@@ -138,15 +132,3 @@ app
 	})
 
 serve(app.fetch)
-
-const getSupabaseClient = (c: Context) => {
-	const supabaseUrl = getEnv('SUPABASE_URL')
-	const supabaseKey = getEnv('SUPABASE_ANON_KEY')
-	const token = c.req.headers.get('Authorization') ??
-		`Bearer ${getEnv('SUPABASE_ANON_KEY')}`
-	const supabase = createClient(supabaseUrl, supabaseKey, {
-		global: { headers: { Authorization: token } },
-	})
-
-	return supabase
-}
