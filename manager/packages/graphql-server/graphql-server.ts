@@ -2,8 +2,8 @@ import {
 	arkiver,
 	arkiverMetadata,
 	arkiverTypes,
+	graphQLCompose,
 	grapQLYoga,
-	http,
 	mongoose,
 	path as denoPath,
 	redis,
@@ -47,8 +47,7 @@ export class GraphQLServer {
 		})
 		logger('graphQLServer').info('[GraphQL Server] Connected to Redis')
 
-		http.serve(
-			async (req, connInfo) => await this.handleRequest(req, connInfo),
+		Deno.serve(
 			{
 				port: Number(getEnv('GRAPHQL_SERVER_PORT')),
 				onListen: () => {
@@ -57,6 +56,7 @@ export class GraphQLServer {
 					)
 				},
 			},
+			async (req, connInfo) => await this.handleRequest(req, connInfo),
 		)
 	}
 
@@ -93,7 +93,7 @@ export class GraphQLServer {
 			)
 			return
 		}
-		const manifest = manifestExport ?? manifestDefault
+		const manifest: arkiver.ArkiveManifest = manifestExport ?? manifestDefault
 		if (!manifest) {
 			logger('graphQLServer').error(
 				`[GraphQL Server] manifest not found for ${arkive.id}-${arkive.deployment.major_version}-${arkive.deployment.minor_version} at ${manifestPath}`,
@@ -123,10 +123,16 @@ export class GraphQLServer {
 			),
 			list: true,
 		}
-		const schema = arkiver.buildSchemaFromEntities([
+
+		const schemaComposer = new graphQLCompose.SchemaComposer()
+		arkiver.buildSchemaFromEntities(schemaComposer, [
 			...models,
 			metadata,
 		])
+		if (manifest.schemaComposerCustomizer) {
+			manifest.schemaComposerCustomizer(schemaComposer)
+		}
+		const schema = schemaComposer.buildSchema()
 
 		const options = {
 			schema,
@@ -166,7 +172,7 @@ export class GraphQLServer {
 		}
 	}
 
-	async handleRequest(req: Request, connInfo: http.ConnInfo) {
+	async handleRequest(req: Request, connInfo: Deno.ServeHandlerInfo) {
 		const url = new URL(req.url)
 
 		const yoga = this.pathToYoga.get(url.pathname)
@@ -181,7 +187,8 @@ export class GraphQLServer {
 			)
 		}
 
-		const apiKey = url.searchParams.get('apiKey') || req.headers.get('x-api-key')
+		const apiKey = url.searchParams.get('apiKey') ||
+			req.headers.get('x-api-key')
 		if (apiKey) {
 			const [, username, arkivename] = url.pathname.split('/')
 			const apiKeyLimited = await apiKeyLimiter({
@@ -200,7 +207,8 @@ export class GraphQLServer {
 				name: 'apikey',
 				max: hfMax,
 				window: hfWindow,
-				message: `Too many requests for this api key. Max ${hfMax} req every ${hfWindow} seconds. Please try again in ${hfWindow} seconds or upgrade your account.`
+				message:
+					`Too many requests for this api key. Max ${hfMax} req every ${hfWindow} seconds. Please try again in ${hfWindow} seconds or upgrade your account.`,
 			})
 
 			const ipLimited = await ipLimiter(req, connInfo)
@@ -212,7 +220,8 @@ export class GraphQLServer {
 				name: '5sec',
 				max: 10,
 				window: 5,
-				message: 'Too many requests form this IP. Max 10 req every 5 seconds. Please try again in 5 seconds or use an api key.'
+				message:
+					'Too many requests from this IP. Max 10 req every 5 seconds. Please try again in 5 seconds or use an api key.',
 			})
 			const ipLimited = await ipLimiter(req, connInfo)
 			if (ipLimited) {
@@ -222,7 +231,8 @@ export class GraphQLServer {
 				name: 'daily',
 				max: 5000,
 				window: 24 * 60 * 60,
-				message: 'Too many requests form this IP. Max 5000 req per day. Please use an api key for more requests.'
+				message:
+					'Too many requests from this IP. Max 5000 req per day. Please use an api key for more requests.',
 			})
 			const dayIpLimited = await dayIpLimit(req, connInfo)
 			if (dayIpLimited) {
