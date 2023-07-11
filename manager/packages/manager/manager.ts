@@ -70,7 +70,7 @@ export class ArkiveManager {
 	}
 
 	private async retryFaultyArkive(id: number): Promise<boolean> {
-		const isActive = this.deployments.find((e) => e.arkive.id === id)
+		const isActive = this.deployments.find((e) => e.arkive.deployment.id === id)
 
 		// It's active, this means it's working. Remove it from errors.
 		if (isActive) {
@@ -78,7 +78,7 @@ export class ArkiveManager {
 		}
 
 		const deployment = (await this.arkiveProvider.getDeployments()).find((e) =>
-			e.deployment.arkive_id === id
+			e.deployment.id === id
 		)
 
 		// It doesn't exis. Delete it.
