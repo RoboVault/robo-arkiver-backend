@@ -1,10 +1,11 @@
-import { http, redis } from '../../deps.ts'
+import { redis } from '../../deps.ts'
 import { ERROR_CODES, REDIS_KEYS } from '../constants.ts'
+import { logger } from '../logger.ts'
 import { ApiAuthProvider } from '../providers/interfaces.ts'
 import { buildObjectFromArray } from '../utils.ts'
 export type RateLimiter = (
 	req: Request,
-	connInfo: http.ConnInfo,
+	connInfo: Deno.ServeHandlerInfo,
 ) => Promise<Response | undefined>
 
 export interface IpRateLimitOptions {
@@ -24,9 +25,11 @@ export const createIpLimiter = (
 ): RateLimiter => {
 	const { max, window, name, message } = options
 
-	return async (req: Request, connInfo: http.ConnInfo) => {
-		const ip = (connInfo.remoteAddr as Deno.NetAddr).hostname ??
-			req.headers.get('x-forwarded-for')
+	return async (req: Request, connInfo: Deno.ServeHandlerInfo) => {
+		const headerIp = req.headers.get('x-forwarded-for')
+		const connIp = connInfo.remoteAddr.hostname
+		logger('graphQLServer').info(`headerIp: ${headerIp}, connIp: ${connIp}`)
+		const ip = headerIp ?? connIp
 		if (!ip) return new Response('Bad Request', { status: 400 })
 
 		const key = `${REDIS_KEYS.IP_RATELIMITER}:${name}:${ip}`
@@ -37,10 +40,13 @@ export const createIpLimiter = (
 		}
 
 		const currentInt = parseInt(current)
-		console.log(currentInt)
+
 		if (currentInt >= max) {
 			const expiry = await redis.ttl(key)
-			return new Response(`Too Many Requests ${message} (expires in ${expiry} seconds)`, { status: 429 })
+			return new Response(
+				`Too Many Requests ${message} (expires in ${expiry} seconds)`,
+				{ status: 429 },
+			)
 		}
 
 		await redis.incr(key)
@@ -58,6 +64,7 @@ export const apiKeyLimiter = async (
 	},
 ) => {
 	const { apiKey, username, apiAuthProvider, redis, arkivename } = params
+
 	const limitRedisKey = `${REDIS_KEYS.LIMITS}:${username}`
 	const countRedisKey =
 		`${REDIS_KEYS.API_RATELIMITER}:${username}:${arkivename}`
@@ -74,25 +81,26 @@ export const apiKeyLimiter = async (
 		}
 		await redis.set(apiKey, username, { ex: 60 * 60 * 24 })
 	}
+
+	let max, hfMax, hfWindow
+
 	if (!limits || (Array.isArray(limits) && limits.length === 0)) {
 		const arkiveLimits = await apiAuthProvider.getUserLimits(username)
 		if (!arkiveLimits) {
 			return new Response('Username Not Found', { status: 404 })
 		}
 		await redis.hset(limitRedisKey, arkiveLimits)
-		if (!count) {
-			await redis.set(countRedisKey, 1, { ex: 60 * 60 * 24 } /* 24 hours */)
-		}
-
-		return {
-			hfMax: arkiveLimits.hfMax,
-			hfWindow: arkiveLimits.hfWindow,
-		}
+		max = arkiveLimits.max
+		hfMax = arkiveLimits.hfMax
+		hfWindow = arkiveLimits.hfWindow
+	} else {
+		const arkiveLimits = buildObjectFromArray(
+			limits as string[],
+		)
+		max = parseInt(arkiveLimits.max)
+		hfMax = parseInt(arkiveLimits.hfMax)
+		hfWindow = parseInt(arkiveLimits.hfWindow)
 	}
-
-	const { max, hfMax, hfWindow } = buildObjectFromArray(
-		limits as string[],
-	)
 	if (!max || !hfMax || !hfWindow) {
 		return new Response(
 			`Internal Server Error: ${ERROR_CODES.INVALID_API_LIMITS}`,
@@ -103,19 +111,25 @@ export const apiKeyLimiter = async (
 	if (!count) {
 		await redis.set(countRedisKey, 1, { ex: 60 * 60 * 24 } /* 24 hours */)
 		return {
-			hfMax: parseInt(hfMax),
-			hfWindow: parseInt(hfWindow),
+			hfMax: hfMax,
+			hfWindow: hfWindow,
 		}
 	}
-	if (parseInt(count as string) >= parseInt(max)) {
+
+	if (parseInt(count as string) >= max) {
 		const expiry = await redis.ttl(countRedisKey)
-		return new Response(`Too Many Requests. The daily limit for your account is: ${parseInt(max)}. Please wait ${(expiry / 60).toFixed(1)} minutes.`, { status: 429 })
+		return new Response(
+			`Too Many Requests. The daily limit for your account is: ${max}. Please wait ${
+				(expiry / 60).toFixed(1)
+			} minutes.`,
+			{ status: 429 },
+		)
 	}
 
 	await redis.incr(countRedisKey)
 
 	return {
-		hfMax: parseInt(hfMax),
-		hfWindow: parseInt(hfWindow),
+		hfMax: hfMax,
+		hfWindow: hfWindow,
 	}
 }

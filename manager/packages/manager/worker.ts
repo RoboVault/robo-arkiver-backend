@@ -1,5 +1,5 @@
 import { ArkiveMessageEvent } from '../manager/types.ts'
-import { arkiver, influx, log, path as denoPath } from '../../deps.ts'
+import { arkiver, influx, log, mongoose, path as denoPath } from '../../deps.ts'
 import { logger } from '../logger.ts'
 import { ArkiveInfluxLogger } from './logger.ts'
 import { createManifestHandlers, getEnv } from '../utils.ts'
@@ -106,9 +106,11 @@ self.onmessage = async (e: MessageEvent<ArkiveMessageEvent>) => {
 
 			log.setup(extendedLogConfig)
 
+			await mongoose.connect(mongoConnection)
+
 			const instance = new arkiver.Arkiver({
 				manifest,
-				mongoConnection,
+				noDb: false,
 				rpcUrls,
 				arkiveData: arkive,
 			})
