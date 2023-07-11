@@ -10,7 +10,7 @@ export const postSchema = z.object({
 	isPublic: z.optional(z.string()),
 	update: z.enum(['major', 'minor']),
 	manifest: z.string(),
-	environment: z.optional(z.string()),
+	env: z.optional(z.string()),
 })
 
 export type PostParams = z.infer<typeof postSchema> & { userId: string }
@@ -19,7 +19,7 @@ export const post = async (
 	supabase: SupabaseClient,
 	params: PostParams,
 ) => {
-	const { userId, name, pkg, isPublic, update, manifest, environment } = params
+	const { userId, name, pkg, isPublic, update, manifest, env } = params
 	const serializedManifest = JSON.parse(manifest)
 	const { data: validatedManifest, problems } = parseSerializedManifest
 		.serializedManifest(
@@ -31,16 +31,15 @@ export const post = async (
 	}
 
 	// check if arkive already exists
-	const select = 'id, environment, deployments!deployments_arkive_id_fkey(major_version, minor_version)'
+	const select =
+		'id, environment, deployments!deployments_arkive_id_fkey(major_version, minor_version)'
 	const selectRes = await supabase
 		.from(SUPABASE_TABLES.ARKIVE)
-		.select<typeof select,
-			{
-				id: string
-				environment: string
-				deployments: { major_version: number; minor_version: number }[]
-			}
-		>(select)
+		.select<typeof select, {
+			id: string
+			environment: string
+			deployments: { major_version: number; minor_version: number }[]
+		}>(select)
 		.eq('user_id', userId)
 		.eq('name', name)
 
@@ -60,7 +59,7 @@ export const post = async (
 				userId,
 				update,
 				manifest: validatedManifest,
-				environment,
+				environment: env,
 			},
 		)
 	} else {
@@ -72,7 +71,7 @@ export const post = async (
 				pkg,
 				isPublic,
 				manifest: validatedManifest,
-				environment,
+				environment: env,
 			},
 		)
 	}
