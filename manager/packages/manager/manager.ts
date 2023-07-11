@@ -93,7 +93,7 @@ export class ArkiveManager {
 	private listenNewDeployments() {
 		this.arkiveProvider.listenNewDeployment(
 			async (deployment: arkiverTypes.Arkive) => {
-				logger('manager').info('new arkive', deployment)
+				logger('manager').info(`new arkive ${deployment.id}`)
 				// only remove previous versions if on the same major version.
 				// old major versions will be removed once the new version is synced
 				const previousDeployments = this.getPreviousVersions(deployment)
@@ -119,9 +119,8 @@ export class ArkiveManager {
 
 	private listenForDeletedArkives() {
 		this.arkiveProvider.listenDeletedArkive(({ id }) => {
-			logger('manager').info('deleting arkives', id)
 			this.removeAllDeployments(id)
-			logger('manager').info('deleted arkives', id)
+			logger('manager').info(`deleted deployments for arkive ${id}`)
 		})
 		logger('manager').info('listening for deleted arkives')
 	}
@@ -191,12 +190,13 @@ export class ArkiveManager {
 				logger('manager').error(e, { source: 'ArkiveManager.addNewDeployment' })
 			}
 		}
-		logger('manager').info('added new arkive', arkive)
+		logger('manager').info(
+			`added new arkive ${arkive.id}@${arkive.deployment.major_version}.${arkive.deployment.minor_version}: ${arkive.name}`,
+		)
 	}
 
 	// this is called when an arkive is deleted by the user which means the record is no longer in the tables
 	private removeAllDeployments(id: number) {
-		logger('manager').info('removing arkives', id)
 		const deletedArkives = this.deployments.filter((a) => a.arkive.id === id)
 		deletedArkives.forEach((arkive) => {
 			this.removeArkive(arkive, {
@@ -207,7 +207,6 @@ export class ArkiveManager {
 			this.faultyArkives?.removeArkive(arkive.arkive)
 		})
 		this.deployments = this.deployments.filter((a) => a.arkive.id !== id)
-		logger('manager').info('removed arkives', id)
 	}
 
 	// this is called in two places: when a new minor version is added (listenNewDeployments)
@@ -216,7 +215,7 @@ export class ArkiveManager {
 		arkive: { arkive: arkiverTypes.Arkive; worker: Worker },
 		options: { updateStatus: boolean; filter: boolean; removeData: boolean },
 	) {
-		logger('manager').info('removing arkive', arkive)
+		logger('manager').info(`removing deployment ${arkive.arkive.deployment.id}`)
 		this.removePackage(arkive.arkive).catch((e) => logger('manager').error(e))
 
 		if (this.options.server) {

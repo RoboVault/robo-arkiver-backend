@@ -1,6 +1,5 @@
 import { redis } from '../../deps.ts'
 import { ERROR_CODES, REDIS_KEYS } from '../constants.ts'
-import { logger } from '../logger.ts'
 import { ApiAuthProvider } from '../providers/interfaces.ts'
 import { buildObjectFromArray } from '../utils.ts'
 export type RateLimiter = (
@@ -28,7 +27,7 @@ export const createIpLimiter = (
 	return async (req: Request, connInfo: Deno.ServeHandlerInfo) => {
 		const headerIp = req.headers.get('x-forwarded-for')
 		const connIp = connInfo.remoteAddr.hostname
-		logger('graphQLServer').info(`headerIp: ${headerIp}, connIp: ${connIp}`)
+
 		const ip = headerIp ?? connIp
 		if (!ip) return new Response('Bad Request', { status: 400 })
 
