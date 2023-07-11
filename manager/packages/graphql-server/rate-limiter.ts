@@ -25,8 +25,10 @@ export const createIpLimiter = (
 	const { max, window, name, message } = options
 
 	return async (req: Request, connInfo: Deno.ServeHandlerInfo) => {
-		const ip = (connInfo.remoteAddr as Deno.NetAddr).hostname ??
-			req.headers.get('x-forwarded-for')
+		const headerIp = req.headers.get('x-forwarded-for')
+		const connIp = connInfo.remoteAddr.hostname
+		console.log(`headerIp: ${headerIp}, connIp: ${connIp}`)
+		const ip = headerIp ?? connIp
 		if (!ip) return new Response('Bad Request', { status: 400 })
 
 		const key = `${REDIS_KEYS.IP_RATELIMITER}:${name}:${ip}`
