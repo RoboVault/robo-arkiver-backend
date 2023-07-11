@@ -53,34 +53,39 @@ export class ArkiveManager {
 				await this.graphQLServer?.run()
 			}
 
-			const deployments = (await this.arkiveProvider.getDeployments())
+			const deployments = await this.arkiveProvider.getDeployments()
 			this.listenNewDeployments()
 			this.listenForDeletedArkives()
 			this.listenForUpdatedDeployments()
-			
-			this.faultyArkives = await FaultyArkives.create(this.retryFaultyArkive.bind(this))
-			await Promise.all([
-				deployments.map(arkive => this.addNewDeployment(arkive))
-			])
 
+			this.faultyArkives = await FaultyArkives.create(
+				this.retryFaultyArkive.bind(this),
+			)
+			await Promise.all([
+				deployments.map((arkive) => this.addNewDeployment(arkive)),
+			])
 		} catch (e) {
 			logger('manager').error(e, { source: 'ArkiveManager.init' })
 		}
 	}
 
 	private async retryFaultyArkive(id: number): Promise<boolean> {
-		const isActive = this.deployments.find(e => e.arkive.id === id)
+		const isActive = this.deployments.find((e) => e.arkive.id === id)
 
-		// It's active, this means it's working. Remove it from errors. 
-		if (isActive) 
+		// It's active, this means it's working. Remove it from errors.
+		if (isActive) {
 			return false
+		}
 
-		const deployment = (await this.arkiveProvider.getDeployments()).find(e => e.deployment.arkive_id === id)
-		
+		const deployment = (await this.arkiveProvider.getDeployments()).find((e) =>
+			e.deployment.arkive_id === id
+		)
+
 		// It doesn't exis. Delete it.
-		if (!deployment) 
+		if (!deployment) {
 			return false
-		
+		}
+
 		await this.addNewDeployment(deployment)
 		return true
 	}
@@ -168,7 +173,9 @@ export class ArkiveManager {
 	}
 
 	private async addNewDeployment(arkive: arkiverTypes.Arkive) {
-		logger('manager').info('adding new arkive', arkive)
+		logger('manager').info(
+			`adding new arkive ${arkive.id}@${arkive.deployment.major_version}.${arkive.deployment.minor_version}: ${arkive.name}`,
+		)
 		await this.arkiveProvider.pullDeployment(arkive)
 
 		if (this.options.manager) {

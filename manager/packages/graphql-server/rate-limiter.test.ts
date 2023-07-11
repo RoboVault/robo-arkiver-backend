@@ -1,11 +1,12 @@
+import 'https://deno.land/std@0.192.0/dotenv/load.ts'
 import {
 	assertEquals,
 	assertNotInstanceOf,
 } from 'https://deno.land/std@0.188.0/testing/asserts.ts'
-import { http, redis } from '../../deps.ts'
+import { redis } from '../../deps.ts'
 import { apiKeyLimiter, createIpLimiter } from './rate-limiter.ts'
 import { REDIS_KEYS } from '../constants.ts'
-import { assertInstanceOf } from 'https://deno.land/std@0.132.0/testing/asserts.ts'
+import { assertInstanceOf } from 'https://deno.land/std@0.192.0/testing/asserts.ts'
 import { getSupabaseClient } from '../utils.ts'
 import { SupabaseAuthProvider } from '../providers/supabase-auth.ts'
 
@@ -17,21 +18,21 @@ Deno.test('IP Rate Limit', async () => {
 
 	await redisClient.flushdb()
 
-	const limiter = createIpLimiter(redisClient, { max: 100, window: 10 })
+	const limiter = createIpLimiter(redisClient, {
+		max: 100,
+		window: 10,
+		name: '10sec',
+		message: 'Too many requests',
+	})
 
 	const req = new Request('http://localhost:8080')
 	const connInfo = {
 		remoteAddr: {
-			hostname: '127.0.0.1',
+			hostname: '128.0.0.1',
 			transport: 'tcp',
 			port: 8080,
 		},
-		localAddr: {
-			hostname: '127.0.0.1',
-			transport: 'tcp',
-			port: 8080,
-		},
-	} satisfies http.ConnInfo
+	} satisfies Deno.ServeHandlerInfo
 
 	for (let i = 0; i < 100; i++) {
 		const res = await limiter(req, connInfo)

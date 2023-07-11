@@ -69,11 +69,11 @@ export const apiKeyLimiter = async (
 	const countRedisKey =
 		`${REDIS_KEYS.API_RATELIMITER}:${username}:${arkivename}`
 
-	const pl = redis.pipeline()
-	pl.get(apiKey)
-	pl.get(countRedisKey)
-	pl.hgetall(limitRedisKey)
-	const [cachedUsername, count, limits] = await pl.exec()
+	const [cachedUsername, count, limits] = await Promise.all([
+		redis.get(apiKey),
+		redis.get(countRedisKey),
+		redis.hgetall(limitRedisKey),
+	])
 
 	if (!cachedUsername || cachedUsername !== username) {
 		if (!(await apiAuthProvider.validateApiKey(apiKey, username))) {
