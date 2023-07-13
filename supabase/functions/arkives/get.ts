@@ -1,41 +1,51 @@
-import { postgres, SupabaseClient } from "../_shared/deps.ts";
-import { HttpError } from "../_shared/http_error.ts";
-import { getUserIdFromUsername } from "../_shared/username.ts";
-import { getEnv } from "../_shared/utils.ts";
+import { RedisCache } from '../_shared/cache.ts'
+import { cachified, postgres, SupabaseClient } from '../_shared/deps.ts'
+import { HttpError } from '../_shared/http_error.ts'
+import { getUsernameFromUserId } from '../_shared/username.ts'
+import { getEnv } from '../_shared/utils.ts'
 
 export async function get(
-  supabase: SupabaseClient,
-  params: {
-    username?: string;
-    arkivename?: string;
-    minimal: boolean;
-  },
+	supabase: SupabaseClient,
+	params: {
+		username?: string
+		arkivename?: string
+		minimal: boolean
+		publicOnly: boolean
+	},
 ) {
-  const { username, arkivename, minimal } = params;
+	const { username, arkivename, minimal, publicOnly } = params
 
-  const publicOnly = await shouldReturnOnlyPublic(supabase, params);
+	const _publicOnly = !publicOnly
+		? await shouldReturnOnlyPublic(supabase, params)
+		: publicOnly
 
-  const sql = postgres(getEnv("SUPABASE_DB_URL"), {
-    port: 6543,
-    password: getEnv("SUPABASE_DB_PASSWORD"),
-  });
+	const sql = postgres(getEnv('SUPABASE_DB_URL'), {
+		port: 6543,
+		password: getEnv('SUPABASE_DB_PASSWORD'),
+	})
 
-  const columns = [
-    "a.id",
-    "a.created_at",
-    "a.name",
-    "a.user_id",
-    "a.public",
-    "a.thumbnail_url",
-    "a.code_repo_url",
-    "a.project_url",
-    "up.username",
-  ];
+	const columns = [
+		'a.id',
+		'a.created_at',
+		'a.name',
+		'a.user_id',
+		'a.public',
+		'a.thumbnail_url',
+		'a.code_repo_url',
+		'a.project_url',
+		'a.environment',
+		'up.username',
+	]
 
-  const arkives = await sql`
+	const arkives = await cachified({
+		key: `arkives-${username}-${arkivename}-${minimal}-${_publicOnly}`,
+		cache: new RedisCache(),
+		getFreshValue: () =>
+			sql`
     SELECT
       ${sql(columns)}
-			${minimal ? sql`` : sql`, ARRAY_AGG(
+			${
+				minimal ? sql`` : sql`, ARRAY_AGG(
 				json_build_object(
 					'deployment_id', d.id,
 					'deployment_created_at', d.created_at,
@@ -47,59 +57,63 @@ export async function get(
 					'manifest', d.manifest
 				)
 			) AS deployments`
-    }
+			}
     FROM
       public.arkive a
     JOIN
       public.user_profile up ON a.user_id = up.id
-    ${minimal ? sql`` : sql`LEFT JOIN
+    ${
+				minimal ? sql`` : sql`LEFT JOIN
       public.deployments d ON a.id = d.arkive_id`
-    }
-    ${publicOnly
-      ? username
-        ? arkivename
-          ? sql`WHERE a.public = true AND up.username = ${username} AND a.name = ${arkivename}`
-          : sql`WHERE a.public = true AND up.username = ${username}`
-        : sql`WHERE a.public = true`
-      : username
-        ? arkivename
-          ? sql`WHERE up.username = ${username} AND a.name = ${arkivename}`
-          : sql`WHERE up.username = ${username}`
-        : sql`WHERE a.public = true` // return empty array
-    }
-    ${minimal ? sql`` : sql`GROUP BY
+			}
+    ${
+				_publicOnly
+					? username
+						? arkivename
+							? sql`WHERE a.public = true AND up.username = ${username} AND a.name = ${arkivename}`
+							: sql`WHERE a.public = true AND up.username = ${username}`
+						: sql`WHERE a.public = true`
+					: username
+					? arkivename
+						? sql`WHERE up.username = ${username} AND a.name = ${arkivename}`
+						: sql`WHERE up.username = ${username}`
+					: sql`WHERE a.public = true` // return empty array
+			}
+    ${
+				minimal ? sql`` : sql`GROUP BY
       a.id, up.username`
-    };
-  `;
+			};
+  `,
+	})
 
-  if (username && arkivename && arkives.length === 0) {
-    throw new HttpError(404, "Arkive not found");
-  }
+	if (username && arkivename && arkives.length === 0) {
+		throw new HttpError(404, 'Arkive not found')
+	}
 
-  if (username && arkivename) {
-    return arkives[0];
-  }
+	if (username && arkivename) {
+		return arkives[0]
+	}
 
-  return arkives;
+	return arkives
 }
 
 const shouldReturnOnlyPublic = async (client: SupabaseClient, params: {
-  username?: string;
+	username?: string
 }) => {
-  const { username } = params;
+	const { username } = params
 
-  if (!username) {
-    return true;
-  }
+	if (!username) {
+		return true
+	}
 
-  if (username) {
-    const { data: { user } } = await client.auth.getUser();
+	if (username) {
+		const { data: { user } } = await client.auth.getUser()
 
-    if (!user) {
-      return true;
-    }
+		if (!user) {
+			return true
+		}
 
-    const userIdFromUsername = await getUserIdFromUsername(client, username);
-    return userIdFromUsername !== user.id;
-  }
-};
+		const userNameFromUserId = await getUsernameFromUserId(client, user.id)
+		return userNameFromUserId !== username
+	}
+}

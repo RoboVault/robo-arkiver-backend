@@ -1,10 +1,18 @@
 {
 	"tasks": {
-		"dev": "deno run -A --watch --unstable main.ts"
+		"graphql": "MODULE=GRAPHQL_SERVER deno run -A --unstable --lock-write main.ts",
+		"runner": "MODULE=ARKIVE_RUNNER deno run -A --unstable --lock-write main.ts",
+		"messenger": "MODULE=MESSENGER deno run -A --unstable --lock-write main.ts",
+		"build:graphql": "docker build -t arkiver-graphql-server -f ../dockerfiles/graphql-server/Dockerfile .",
+		"build:runner": "docker build -t arkive-runner -f ../dockerfiles/arkive-runner/Dockerfile .",
+		"build:messenger": "docker build -t messenger -f ../dockerfiles/messenger/Dockerfile ."
 	},
 	"imports": {
 		"https://deno.land/x/robo_arkiver@v0.3.6/": "https://deno.land/x/robo_arkiver/",
-		"https://deno.land/x/robo_arkiver@v0.3.3/": "https://deno.land/x/robo_arkiver/"
+		"https://deno.land/x/robo_arkiver@v0.3.3/": "https://deno.land/x/robo_arkiver/",
+		"https://deno.land/x/robo_arkiver@v0.4.0/": "https://deno.land/x/robo_arkiver/",
+		"https://deno.land/x/robo_arkiver@v0.4.4/": "https://deno.land/x/robo_arkiver/",
+		"npm:ethers@6.1.0": "npm:ethers"
 	},
 	"fmt": {
 		"options": {

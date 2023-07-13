@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: arkiver-messenger
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: arkiver-messenger
+  template:
+    metadata:
+      labels:
+        app: arkiver-messenger
+    spec:
+      containers:
+        - name: arkiver-messenger
+          image: 033393603340.dkr.ecr.us-east-1.amazonaws.com/arkiver-messenger:latest
+          env:
+            - name: ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: env-config
+                  key: ENVIRONMENT
+            - name: SUPABASE_SERVICE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: env-secrets
+                  key: SUPABASE_SERVICE_KEY
+            - name: INFLUX_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: env-config
+                  key: INFLUX_URL
+            - name: INFLUX_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: env-secrets
+                  key: INFLUX_ADMIN_TOKEN
+            - name: INFLUX_ORG
+              valueFrom:
+                configMapKeyRef:
+                  name: env-config
+                  key: INFLUX_ORG
+            - name: INFLUX_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: env-config
+                  key: INFLUX_BUCKET
+            - name: MESSENGER_REDIS_HOSTNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: env-config
+                  key: MESSENGER_REDIS_HOSTNAME
+            - name: MESSENGER_REDIS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: env-config
+                  key: MESSENGER_REDIS_PORT

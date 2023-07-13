@@ -1,7 +1,7 @@
-export * as arkiver from '../../robo-arkiver/mod.ts'
-export * as arkiverTypes from '../../robo-arkiver/src/arkiver/types.ts'
-export * as arkiverUtils from '../../robo-arkiver/src/utils.ts'
-export * as arkiverMetadata from '../../robo-arkiver/src/arkiver/arkive-metadata.ts'
+export * as arkiver from "https://deno.land/x/robo_arkiver@v0.4.14/mod.ts"
+export * as arkiverTypes from "https://deno.land/x/robo_arkiver@v0.4.14/src/arkiver/types.ts"
+export * as arkiverUtils from 'https://deno.land/x/robo_arkiver@v0.4.14/src/utils.ts'
+export * as arkiverMetadata from 'https://deno.land/x/robo_arkiver@v0.4.14/src/arkiver/arkive-metadata.ts'
 export * as supabase from 'https://esm.sh/@supabase/supabase-js@2.5.0'
 export * as mongoose from 'npm:mongoose'
 export * as graphQLCompose from 'npm:graphql-compose'
@@ -12,3 +12,5 @@ export * as log from 'https://deno.land/std@0.181.0/log/mod.ts'
 export * as logHandlers from 'https://deno.land/std@0.181.0/log/handlers.ts'
 export * as influx from 'npm:@influxdata/influxdb-client'
 export * as path from 'https://deno.land/std@0.183.0/path/mod.ts'
+export * as redis from 'https://deno.land/x/redis@v0.29.4/mod.ts'
+export { delay } from "https://deno.land/std@0.189.0/async/delay.ts"

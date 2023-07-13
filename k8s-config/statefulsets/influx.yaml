@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: influx
+spec:
+  serviceName: "influx"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: influx
+  template:
+    metadata:
+      labels:
+        app: influx
+    spec:
+      containers:
+        - name: influx
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          image: influxdb:latest
+          ports:
+            - containerPort: 8086
+              name: influx
+          env:
+            - name: DOCKER_INFLUXDB_INIT_MODE
+              value: setup
+            - name: DOCKER_INFLUXDB_INIT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: INFLUX_ADMIN_USER
+                  name: env-secrets
+            - name: DOCKER_INFLUXDB_INIT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: INFLUX_ADMIN_PASSWORD
+                  name: env-secrets
+            - name: DOCKER_INFLUXDB_INIT_ORG
+              valueFrom:
+                configMapKeyRef:
+                  key: INFLUX_ORG
+                  name: env-config
+            - name: DOCKER_INFLUXDB_INIT_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  key: INFLUX_BUCKET
+                  name: env-config
+            - name: DOCKER_INFLUXDB_INIT_ADMIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  key: INFLUX_ADMIN_TOKEN
+                  name: env-secrets
+            - name: DOCKER_INFLUXDB_INIT_RETENTION
+              valueFrom:
+                configMapKeyRef:
+                  key: INFLUX_RETENTION
+                  name: env-config
+          volumeMounts:
+            - name: influx-storage
+              mountPath: /var/lib/influxdb2
+  volumeClaimTemplates:
+    - metadata:
+        name: influx-storage
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: "ebs-sc"
+        resources:
+          requests:
+            storage: 10Gi

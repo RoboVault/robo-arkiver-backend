@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-messenger
+spec:
+  serviceName: "redis-messenger"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-messenger
+  template:
+    metadata:
+      labels:
+        app: redis-messenger
+    spec:
+      containers:
+        - name: redis
+          image: redis
+          ports:
+            - containerPort: 6379
+              name: redis
+          volumeMounts:
+            - name: redis-messenger-data
+              mountPath: /data
+  volumeClaimTemplates:
+    - metadata:
+        name: redis-messenger-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: "ebs-sc"
+        resources:
+          requests:
+            storage: 5Gi

@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/compose-spec/compose-spec/master/schema/compose-spec.json
+
+services:
+  mongodb:
+    image: mongo
+    ports:
+      - 27017:27017
+
+  influxdb:
+    image: influxdb
+    ports:
+      - 8086:8086
+
+  messenger-redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+
+  server-redis:
+    image: redis:latest
+    ports:
+      - "6378:6379"
+
+  redis-insight:
+    image: redislabs/redisinsight:latest
+    ports:
+      - "8001:8001"

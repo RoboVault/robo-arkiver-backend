@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: env-config
+data:
+  SERVER_REDIS_HOSTNAME: "redis-graphql-server"
+  SERVER_REDIS_PORT: "6379"
+  MESSENGER_REDIS_HOSTNAME: "redis-messenger"
+  MESSENGER_REDIS_PORT: "6379"
+  INFLUX_URL: "http://influx:8086"
+  INFLUX_ORG: "arkiver"
+  INFLUX_BUCKET: "logs"
+  INFLUX_RETENTION: "3d"
+  ENVIRONMENT: "kube"
