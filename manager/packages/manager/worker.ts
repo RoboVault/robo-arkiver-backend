@@ -123,7 +123,6 @@ self.onmessage = async (e: MessageEvent<ArkiveMessageEvent>) => {
 				self.postMessage({ topic: 'handlerError', data: { arkive } })
 			})
 			await instance.run()
-			Deno.permissions.revoke({ name: 'env' })
 			break
 		}
 	}
