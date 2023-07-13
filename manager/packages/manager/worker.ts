@@ -106,7 +106,9 @@ self.onmessage = async (e: MessageEvent<ArkiveMessageEvent>) => {
 
 			log.setup(extendedLogConfig)
 
-			await mongoose.connect(mongoConnection)
+			await mongoose.connect(mongoConnection, {
+				dbName: `${arkive.id}-${arkive.deployment.major_version}`,
+			})
 
 			const instance = new arkiver.Arkiver({
 				manifest,
