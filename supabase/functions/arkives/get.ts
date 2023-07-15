@@ -1,5 +1,4 @@
-import { RedisCache } from '../_shared/cache.ts'
-import { cachified, postgres, SupabaseClient } from '../_shared/deps.ts'
+import { postgres, SupabaseClient } from '../_shared/deps.ts'
 import { HttpError } from '../_shared/http_error.ts'
 import { getUsernameFromUserId } from '../_shared/username.ts'
 import { getEnv } from '../_shared/utils.ts'
@@ -24,9 +23,7 @@ export async function get(
 		password: getEnv('SUPABASE_DB_PASSWORD'),
 	})
 
-	const columns = [
-		'a.id',
-		'a.created_at',
+	const minimalColumns = [
 		'a.name',
 		'a.user_id',
 		'a.public',
@@ -37,54 +34,103 @@ export async function get(
 		'up.username',
 	]
 
-	const arkives = await cachified({
-		key: `arkives-${username}-${arkivename}-${minimal}-${_publicOnly}`,
-		cache: new RedisCache(),
-		getFreshValue: () =>
-			sql`
-    SELECT
-      ${sql(columns)}
-			${
-				minimal ? sql`` : sql`, ARRAY_AGG(
-				json_build_object(
-					'deployment_id', d.id,
-					'deployment_created_at', d.created_at,
-					'major_version', d.major_version,
-					'minor_version', d.minor_version,
-					'status', d.status,
-					'arkive_id', d.arkive_id,
-					'file_path', d.file_path,
-					'manifest', d.manifest
-				)
-			) AS deployments`
+	const extraColumns = [
+		'd.id',
+		'd.created_at',
+		'd.major_version',
+		'd.minor_version',
+		'd.status',
+		'd.arkive_id',
+		'd.manifest',
+	]
+
+	const columns = minimal ? minimalColumns : minimalColumns.concat(extraColumns)
+
+	const arkivesRaw = await sql`
+		SELECT
+			${sql(columns)}
+		FROM
+			public.arkive a
+		JOIN
+			public.user_profile up ON a.user_id = up.id
+		${
+		minimal ? sql`` : sql`LEFT JOIN
+			public.deployments d ON a.id = d.arkive_id`
+	}
+		${
+		_publicOnly
+			? username
+				? arkivename
+					? sql`WHERE a.public = true AND up.username = ${username} AND a.name = ${arkivename}`
+					: sql`WHERE a.public = true AND up.username = ${username}`
+				: sql`WHERE a.public = true`
+			: username
+			? arkivename
+				? sql`WHERE up.username = ${username} AND a.name = ${arkivename}`
+				: sql`WHERE up.username = ${username}`
+			: sql`WHERE a.public = true` // return empty array
+	}
+	`
+
+	type Arkive = {
+		id: number
+		name: string
+		user_id: string
+		public: boolean
+		thumbnail_url: string
+		code_repo_url: string
+		project_url: string
+		environment: string
+		username: string
+		deployments: {
+			id: number
+			created_at: string
+			major_version: number
+			minor_version: number
+			status: string
+			manifest: string
+		}[]
+	}
+
+	let arkives
+
+	if (!minimal) {
+		const grouped: Record<number, Arkive> = {}
+
+		arkivesRaw.forEach((arkive) => {
+			const deployment = {
+				'id': arkive.id,
+				'created_at': arkive.created_at,
+				'major_version': arkive.major_version,
+				'minor_version': arkive.minor_version,
+				'status': arkive.status,
+				'arkive_id': arkive.arkive_id,
+				'file_path': arkive.file_path,
+				'manifest': arkive.manifest,
 			}
-    FROM
-      public.arkive a
-    JOIN
-      public.user_profile up ON a.user_id = up.id
-    ${
-				minimal ? sql`` : sql`LEFT JOIN
-      public.deployments d ON a.id = d.arkive_id`
+
+			if (!grouped[arkive.id]) {
+				grouped[arkive.id] = {
+					'id': arkive.arkive_id,
+					'name': arkive.name,
+					'user_id': arkive.user_id,
+					'public': arkive.public,
+					'thumbnail_url': arkive.thumbnail_url,
+					'code_repo_url': arkive.code_repo_url,
+					'project_url': arkive.project_url,
+					'environment': arkive.environment,
+					'username': arkive.username,
+					'deployments': [deployment],
+				}
+			} else {
+				grouped[arkive.id].deployments.push(deployment)
 			}
-    ${
-				_publicOnly
-					? username
-						? arkivename
-							? sql`WHERE a.public = true AND up.username = ${username} AND a.name = ${arkivename}`
-							: sql`WHERE a.public = true AND up.username = ${username}`
-						: sql`WHERE a.public = true`
-					: username
-					? arkivename
-						? sql`WHERE up.username = ${username} AND a.name = ${arkivename}`
-						: sql`WHERE up.username = ${username}`
-					: sql`WHERE a.public = true` // return empty array
-			}
-    ${
-				minimal ? sql`` : sql`GROUP BY
-      a.id, up.username`
-			};
-  `,
-	})
+		})
+
+		arkives = Object.values(grouped)
+	} else {
+		arkives = arkivesRaw
+	}
 
 	if (username && arkivename && arkives.length === 0) {
 		throw new HttpError(404, 'Arkive not found')
