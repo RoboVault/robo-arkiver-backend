@@ -104,13 +104,12 @@ export async function get(
 				'major_version': arkive.major_version,
 				'minor_version': arkive.minor_version,
 				'status': arkive.status,
-				'arkive_id': arkive.arkive_id,
 				'file_path': arkive.file_path,
 				'manifest': arkive.manifest,
 			}
 
-			if (!grouped[arkive.id]) {
-				grouped[arkive.id] = {
+			if (!grouped[arkive.arkive_id]) {
+				grouped[arkive.arkive_id] = {
 					'id': arkive.arkive_id,
 					'name': arkive.name,
 					'user_id': arkive.user_id,
@@ -123,7 +122,7 @@ export async function get(
 					'deployments': [deployment],
 				}
 			} else {
-				grouped[arkive.id].deployments.push(deployment)
+				grouped[arkive.arkive_id].deployments.push(deployment)
 			}
 		})
 
