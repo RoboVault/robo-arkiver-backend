@@ -31,6 +31,7 @@ export async function get(
 		'a.code_repo_url',
 		'a.project_url',
 		'a.environment',
+		'a.featured',
 		'up.username',
 	]
 
@@ -53,23 +54,21 @@ export async function get(
 			public.arkive a
 		JOIN
 			public.user_profile up ON a.user_id = up.id
-		${
-		minimal ? sql`` : sql`LEFT JOIN
+		${minimal ? sql`` : sql`LEFT JOIN
 			public.deployments d ON a.id = d.arkive_id`
-	}
-		${
-		_publicOnly
+		}
+		${_publicOnly
 			? username
 				? arkivename
 					? sql`WHERE a.public = true AND up.username = ${username} AND a.name = ${arkivename}`
 					: sql`WHERE a.public = true AND up.username = ${username}`
 				: sql`WHERE a.public = true`
 			: username
-			? arkivename
-				? sql`WHERE up.username = ${username} AND a.name = ${arkivename}`
-				: sql`WHERE up.username = ${username}`
-			: sql`WHERE a.public = true` // return empty array
-	}
+				? arkivename
+					? sql`WHERE up.username = ${username} AND a.name = ${arkivename}`
+					: sql`WHERE up.username = ${username}`
+				: sql`WHERE a.public = true` // return empty array
+		}
 	`
 
 	type Arkive = {
@@ -82,6 +81,7 @@ export async function get(
 		project_url: string
 		environment: string
 		username: string
+		featured: boolean
 		deployments: {
 			id: number
 			created_at: string
@@ -119,6 +119,7 @@ export async function get(
 					'project_url': arkive.project_url,
 					'environment': arkive.environment,
 					'username': arkive.username,
+					'featured': arkive.featured,
 					'deployments': [deployment],
 				}
 			} else {
