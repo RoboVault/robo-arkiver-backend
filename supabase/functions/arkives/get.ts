@@ -19,6 +19,8 @@ export async function get(
 		: publicOnly
 
 	const sql = postgres(getEnv('SUPABASE_DB_URL'), {
+		database: 'postgres',
+		username: 'postgres',
 		port: 6543,
 		password: getEnv('SUPABASE_DB_PASSWORD'),
 	})

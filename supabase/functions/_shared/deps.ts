@@ -20,3 +20,4 @@ export {
 } from 'https://esm.sh/cachified@3.5.4'
 export { Redis } from 'https://deno.land/x/upstash_redis@v1.20.6/mod.ts'
 export { scope } from 'https://esm.sh/arktype@0.6.0'
+import "https://deno.land/std@0.173.0/dotenv/load.ts";
