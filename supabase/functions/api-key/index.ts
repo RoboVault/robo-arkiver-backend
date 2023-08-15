@@ -32,11 +32,13 @@ app
 			throw new HttpError(500, 'Internal Server Error')
 		}
 
-		const { data: insertData, error: insertError } = await supabase.from(
-			SUPABASE_TABLES.API_KEYS,
-		)
+		const body = await c.req.json()
+
+		const { data: insertData, error: insertError } = await supabase
+			.from(SUPABASE_TABLES.API_KEYS,)
 			.insert({
 				user_profile_id: userData.user.id,
+				name: body['name']
 			})
 			.select()
 
@@ -46,6 +48,7 @@ app
 		}
 
 		return c.json({
+			name: insertData[0].name,
 			apiKey: insertData[0].api_key,
 		})
 	})
@@ -61,13 +64,10 @@ app
 			const { apiKey } = c.req.valid('json')
 			const client = getSupabaseClient(c)
 
-			const { data: deleteData, error: deleteError } = await client.from(
-				SUPABASE_TABLES.API_KEYS,
-			)
+			const { data: deleteData, error: deleteError } = await client
+				.from(SUPABASE_TABLES.API_KEYS)
 				.delete()
-				.match({
-					api_key: apiKey,
-				})
+				.match({ api_key: apiKey, })
 				.select()
 
 			if (deleteError) {
