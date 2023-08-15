@@ -5,10 +5,11 @@ import { Arkive } from '../_shared/types.ts'
 export const patchSchema = z.object({
 	visibility: z.optional(z.literal('public')),
 	name: z.optional(z.string()),
+	public: z.optional(z.boolean()),
 })
 
 export type PatchParams = z.infer<typeof patchSchema> & {
-	arkivename: string
+	arkiveName: string
 	userId: string
 }
 
@@ -17,32 +18,33 @@ export const patch = async (
 	supabase: SupabaseClient,
 	params: PatchParams,
 ) => {
-	// check params
-	const { arkivename } = params
+	// remove arkiveName and userId in params
+	const { arkiveName, userId, ...partialParams } = params
 
 	// check if arkive exists
-	const selectRes = await supabase
+	const selectedArkive = await supabase
 		.from(SUPABASE_TABLES.ARKIVE)
 		.select<'*', Arkive>('*')
-		.eq('user_id', params.userId)
-		.eq('name', arkivename)
+		.eq('user_id', userId)
+		.eq('name', arkiveName)
 		.single()
 
-	if (selectRes.error) {
-		throw selectRes.error
+	if (selectedArkive.error) {
+		throw selectedArkive.error
+	}
+
+	// override old properties with new values
+	const patchedArkive = {
+		...selectedArkive.data,
+		...partialParams
 	}
 
 	// update arkive in db
 	const updateRes = await supabase
 		.from(SUPABASE_TABLES.ARKIVE)
-		.update<{ name: string; public: boolean }>({
-			name: params.name ? params.name : selectRes.data.name,
-			public: params.visibility
-				? params.visibility === 'public'
-				: selectRes.data.public,
-		})
-		.eq('user_id', params.userId)
-		.eq('name', arkivename)
+		.update({ ...patchedArkive })
+		.eq('user_id', userId)
+		.eq('name', arkiveName)
 		.select<'*', Arkive>('*')
 
 	if (updateRes.error) {

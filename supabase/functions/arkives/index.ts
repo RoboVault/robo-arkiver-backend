@@ -2,7 +2,7 @@ import { cors, Hono, serve, validator } from '../_shared/deps.ts'
 import { getSupabaseClient } from '../_shared/utils.ts'
 import { del } from './delete.ts'
 import { get } from './get.ts'
-import { patch, patchSchema } from './patch.ts'
+import { patch } from './patch.ts'
 import { post, postSchema } from './post.ts'
 
 const app = new Hono()
@@ -61,8 +61,7 @@ app
 
 		return c.json(data)
 	})
-	.post(
-		'/',
+	.post('/',
 		validator(
 			'form',
 			(value, c) => {
@@ -87,17 +86,36 @@ app
 			return c.json(data)
 		},
 	)
-	.patch(
-		'/:arkivename',
-		validator('form', (value, c) => {
-			const parsed = patchSchema.safeParse(value)
-			if (!parsed.success) return c.json(parsed.error.format(), 400)
-			return parsed.data
-		}),
+
+	.patch('/:arkivename',
+		/**
+		 * TODO: Figure out why value is always empty {}
+		 * see: https://hono.dev/guides/validation#with-zod
+		 * 
+		 * DO NOT remove this unused codes 
+		 * @param c 
+		 * @returns 
+		 */
+
+		// validator('form', (value, c) => {
+		// 	const parsed = patchSchema.safeParse(value)
+		// 	console.log('value:: ', value)
+
+		// 	if (!parsed.success) return c.json(parsed.error.format(), 400)
+		// 	return parsed.data
+		// }),
+
 		async (c) => {
-			const arkivename = c.req.param('arkivename')
-			const formData = c.req.valid('form')
+			const arkiveName = c.req.param('arkivename')
 			const supabase = getSupabaseClient(c)
+
+			/**
+			 * To access validated field, use c.req.valid('form')
+			 * const formData = c.req.valid('form')
+			 * 
+			 * Use the c.req.json() for now to get the request body
+			 */
+			const body = await c.req.json()
 
 			const userIdRes = await supabase.auth.getUser()
 			if (userIdRes.error) {
@@ -105,10 +123,11 @@ app
 			}
 
 			const data = await patch(supabase, {
-				...formData,
-				arkivename,
+				...body,
+				arkiveName,
 				userId: userIdRes.data.user.id,
 			})
+
 			return c.json(data)
 		},
 	)

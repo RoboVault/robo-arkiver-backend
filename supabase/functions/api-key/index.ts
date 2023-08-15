@@ -1,5 +1,5 @@
 import { SUPABASE_TABLES } from '../../../manager/packages/constants.ts'
-import { Hono, validator } from '../_shared/deps.ts'
+import { cors, Hono, validator } from '../_shared/deps.ts'
 import { HttpError } from '../_shared/http_error.ts'
 import { getSupabaseClient } from '../_shared/utils.ts'
 
@@ -7,6 +7,18 @@ const app = new Hono()
 
 app
 	.basePath('/api-key')
+	.use(
+		'*',
+		cors({
+			origin: '*',
+			allowHeaders: [
+				'Content-type',
+				'Accept',
+				'X-Custom-Header',
+				'Authorization',
+			],
+		}),
+	)
 	.post('/', async (c) => {
 		const supabase = getSupabaseClient(c)
 
