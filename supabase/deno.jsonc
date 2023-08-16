@@ -1,0 +1,6 @@
+{
+  "tasks": {
+    "serve-arkives": "ENIRONMENT=dev deno run -A ./functions/arkives/index.ts",
+    "test-arkives": "deno test -A ./test/arkives.test.ts"
+  }
+}

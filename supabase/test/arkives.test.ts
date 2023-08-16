@@ -4,7 +4,7 @@ import "https://deno.land/std@0.173.0/dotenv/load.ts";
 import { getEnv } from "../functions/_shared/utils.ts";
 import { z } from 'https://deno.land/x/zod@v3.21.4/mod.ts'
 
-const URL = 'http://0.0.0.0:8000' // use getEnv("SUPABASE_FUNCTION_URL") to run on prod
+const URL = 'http://0.0.0.0:8000'
 const ANON_KEY = getEnv("SUPABASE_ANON_KEY")
 
 const ARKIVE_SCHEMA = z.object({
