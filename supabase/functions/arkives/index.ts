@@ -1,9 +1,10 @@
 import { cors, Hono, serve, validator } from '../_shared/deps.ts'
-import { getSupabaseClient } from '../_shared/utils.ts'
+import { getEnv, getSupabaseClient } from '../_shared/utils.ts'
 import { del } from './delete.ts'
 import { get } from './get.ts'
 import { patch } from './patch.ts'
 import { post, postSchema } from './post.ts'
+import '../_shared/config.ts'
 
 const app = new Hono()
 

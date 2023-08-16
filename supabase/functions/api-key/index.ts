@@ -2,6 +2,7 @@ import { SUPABASE_TABLES } from '../../../manager/packages/constants.ts'
 import { cors, Hono, validator } from '../_shared/deps.ts'
 import { HttpError } from '../_shared/http_error.ts'
 import { getSupabaseClient } from '../_shared/utils.ts'
+import '../_shared/config.ts'
 
 const app = new Hono()
 
