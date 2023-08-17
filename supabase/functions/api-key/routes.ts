@@ -1,11 +1,23 @@
 import { SUPABASE_TABLES } from '../../../manager/packages/constants.ts'
-import { Hono, validator } from '../_shared/deps.ts'
+import { cors, Hono, validator } from '../_shared/deps.ts'
 import { HttpError } from '../_shared/http_error.ts'
 import { getSupabaseClient } from '../_shared/utils.ts'
 
 export const app = new Hono()
 
 app
+	.use(
+		'*',
+		cors({
+			origin: '*',
+			allowHeaders: [
+				'Content-type',
+				'Accept',
+				'X-Custom-Header',
+				'Authorization',
+			],
+		}),
+	)
 	.post('/', async (c) => {
 		const supabase = getSupabaseClient(c)
 
@@ -19,11 +31,13 @@ app
 			throw new HttpError(500, 'Internal Server Error')
 		}
 
-		const { data: insertData, error: insertError } = await supabase.from(
-			SUPABASE_TABLES.API_KEYS,
-		)
+		const body = await c.req.json()
+
+		const { data: insertData, error: insertError } = await supabase
+			.from(SUPABASE_TABLES.API_KEYS,)
 			.insert({
 				user_profile_id: userData.user.id,
+				name: body['name']
 			})
 			.select()
 
@@ -33,6 +47,7 @@ app
 		}
 
 		return c.json({
+			name: insertData[0].name,
 			apiKey: insertData[0].api_key,
 		})
 	})
@@ -48,13 +63,10 @@ app
 			const { apiKey } = c.req.valid('json')
 			const client = getSupabaseClient(c)
 
-			const { data: deleteData, error: deleteError } = await client.from(
-				SUPABASE_TABLES.API_KEYS,
-			)
+			const { data: deleteData, error: deleteError } = await client
+				.from(SUPABASE_TABLES.API_KEYS)
 				.delete()
-				.match({
-					api_key: apiKey,
-				})
+				.match({ api_key: apiKey, })
 				.select()
 
 			if (deleteError) {
