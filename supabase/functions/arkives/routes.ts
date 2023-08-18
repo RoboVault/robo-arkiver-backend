@@ -8,6 +8,7 @@ import { post, postSchema } from './post.ts'
 export const app = new Hono()
 
 app
+	.basePath('/arkives')
 	.use(
 		'*',
 		cors({
