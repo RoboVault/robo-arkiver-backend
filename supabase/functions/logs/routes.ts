@@ -18,7 +18,6 @@ const getLimitOffset = (page: number) => {
 export const app = new Hono()
 
 app
-	.basePath('/logs')
 	.use(
 		'*',
 		cors({

@@ -6,7 +6,6 @@ import { getSupabaseClient } from '../_shared/utils.ts'
 export const app = new Hono()
 
 app
-	.basePath('/api-key')
 	.use(
 		'*',
 		cors({

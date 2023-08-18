@@ -1,4 +1,10 @@
-import { serve } from "https://deno.land/std@0.189.0/http/server.ts";
-import { app } from "./routes.ts";
+import { app as route } from "./routes.ts";
+import { Hono } from "../_shared/deps.ts";
 
-serve(app.fetch)
+const app = new Hono()
+
+app
+	.basePath('/arkives')
+	.route('*', route)
+
+Deno.serve(app.fetch)
