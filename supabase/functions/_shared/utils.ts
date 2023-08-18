@@ -13,6 +13,7 @@ export const getSupabaseClient = (c: Context) => {
 	const supabaseKey = getEnv('SUPABASE_ANON_KEY')
 	const token = c.req.headers.get('Authorization') ?? `Bearer ${supabaseKey}`
 	const supabase = createClient(supabaseUrl, supabaseKey, {
+		auth: { persistSession: false },
 		global: { headers: { Authorization: token } },
 	})
 
