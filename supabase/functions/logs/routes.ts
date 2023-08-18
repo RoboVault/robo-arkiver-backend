@@ -16,18 +16,8 @@ const getLimitOffset = (page: number) => {
 }
 
 export const app = new Hono()
-	.use(
-		'*',
-		cors({
-			origin: '*',
-			allowHeaders: [
-				'Content-type',
-				'Accept',
-				'X-Custom-Header',
-				'Authorization',
-			],
-		}),
-	)
+
+app
 	.get(
 		'/:arkiveId/:version',
 		validator('query', (value) => {

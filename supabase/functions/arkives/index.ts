@@ -1,5 +1,21 @@
-import { serve } from "https://deno.land/std@0.189.0/http/server.ts";
-import { app } from "./routes.ts";
+import { app as route } from "./routes.ts";
+import { Hono, cors } from "../_shared/deps.ts";
 
-app.basePath('/arkives')
-serve(app.fetch)
+const app = new Hono()
+
+app
+	.use(
+		'*',
+		cors({
+			origin: '*',
+			allowHeaders: [
+				'Content-type',
+				'Accept',
+				'X-Custom-Header',
+				'Authorization',
+			],
+		}),
+	)
+	.route('*', route)
+
+Deno.serve(app.fetch)

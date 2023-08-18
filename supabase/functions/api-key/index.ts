@@ -1,5 +1,21 @@
-import { app } from "./routes.ts";
+import { app as route } from "./routes.ts"
+import { Hono, cors } from "../_shared/deps.ts";
 
-app.basePath('/api-key')
+const app = new Hono()
+
+app
+	.use(
+		'*',
+		cors({
+			origin: '*',
+			allowHeaders: [
+				'Content-type',
+				'Accept',
+				'X-Custom-Header',
+				'Authorization',
+			],
+		}),
+	)
+	.route('*', route)
 
 Deno.serve(app.fetch)
