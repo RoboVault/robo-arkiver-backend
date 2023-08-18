@@ -6,18 +6,6 @@ import { getSupabaseClient } from '../_shared/utils.ts'
 export const app = new Hono()
 
 app
-	.use(
-		'*',
-		cors({
-			origin: '*',
-			allowHeaders: [
-				'Content-type',
-				'Accept',
-				'X-Custom-Header',
-				'Authorization',
-			],
-		}),
-	)
 	.post('/', async (c) => {
 		const supabase = getSupabaseClient(c)
 

@@ -8,18 +8,6 @@ import { post, postSchema } from './post.ts'
 export const app = new Hono()
 
 app
-	.use(
-		'*',
-		cors({
-			origin: '*',
-			allowHeaders: [
-				'Content-type',
-				'Accept',
-				'X-Custom-Header',
-				'Authorization',
-			],
-		}),
-	)
 	.get('/:username/:arkivename', async (c) => {
 		const { arkivename, username } = c.req.param()
 		const minimal = c.req.query('minimal') === 'true'
