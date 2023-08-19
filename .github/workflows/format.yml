@@ -1,0 +1,16 @@
+name: Format
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  format:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: denoland/setup-deno@v1.1.2
+        with:
+          deno-version: v1.x
+      - run: deno --version
+      - run: deno fmt
