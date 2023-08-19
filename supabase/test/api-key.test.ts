@@ -6,10 +6,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.5.0";
 const FUNCTIONS_URL = 'http://0.0.0.0:8000'
 const ANON_KEY = getEnv("SUPABASE_ANON_KEY")
 const headers = (token: string = ANON_KEY) => {
-	return {
-		Authorization: `Bearer ${token}`,
-		'Content-Type': 'application/json'
-	}
+  return {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
 }
 
 /** TODO Tests:
@@ -42,12 +42,12 @@ Deno.test({
   name: "Successfully creates key",
   fn: async () => {
     const url = `${FUNCTIONS_URL}/api-key`
-		const token = await getAccessToken()
-		const body = JSON.stringify({ name: 'unit test key!' })
+    const token = await getAccessToken()
+    const body = JSON.stringify({ name: 'unit test key!' })
     const response = await fetch(url, {
       method: "POST",
       headers: headers(token),
-			body
+      body
     });
     assertEquals(response.status, 200)
     const { name, apiKey } = await response.json()
