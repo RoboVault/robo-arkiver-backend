@@ -1,3 +1,4 @@
+import { randomBytes } from "https://deno.land/std@0.82.0/node/crypto.ts";
 import { SUPABASE_TABLES } from '../../../manager/packages/constants.ts'
 import { cors, Hono, validator } from '../_shared/deps.ts'
 import { HttpError } from '../_shared/http_error.ts'
@@ -19,15 +20,17 @@ app
       throw new HttpError(500, 'Internal Server Error')
     }
 
-    const body = await c.req.json()
+		const body = await c.req.json()
+		const api_key = randomBytes(32).toString('hex')
 
-    const { data: insertData, error: insertError } = await supabase
-      .from(SUPABASE_TABLES.API_KEYS)
-      .insert({
-        user_profile_id: userData.user.id,
-        name: body['name'],
-      })
-      .select()
+		const { data: insertData, error: insertError } = await supabase
+			.from(SUPABASE_TABLES.API_KEYS,)
+			.insert({
+				api_key,
+				user_profile_id: userData.user.id,
+				name: body['name']
+			})
+			.select()
 
     if (insertError) {
       console.error(insertError)
