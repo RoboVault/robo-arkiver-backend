@@ -8,36 +8,36 @@ import { createClient } from '../_shared/deps.ts'
 import { SUPABASE_TABLES } from '../../../manager/packages/constants.ts'
 
 serve(async (req) => {
-	const { username } = await req.json()
+  const { username } = await req.json()
 
-	const supabaseUrl = getEnv('SUPABASE_URL')
-	const supabaseAnonKey = getEnv('SUPABASE_ANON_KEY')
-	const token = req.headers.get('Authorization') ??
-		`Bearer ${supabaseAnonKey}`
-	const supabase = createClient(
-		supabaseUrl,
-		supabaseAnonKey,
-		{
-			global: {
-				headers: { Authorization: token },
-			},
-		},
-	)
+  const supabaseUrl = getEnv('SUPABASE_URL')
+  const supabaseAnonKey = getEnv('SUPABASE_ANON_KEY')
+  const token = req.headers.get('Authorization') ??
+    `Bearer ${supabaseAnonKey}`
+  const supabase = createClient(
+    supabaseUrl,
+    supabaseAnonKey,
+    {
+      global: {
+        headers: { Authorization: token },
+      },
+    },
+  )
 
-	const userRes = await supabase.auth.getUser(token)
-	if (!userRes.data) {
-		return new Response('Unauthorized', { status: 401 })
-	}
+  const userRes = await supabase.auth.getUser(token)
+  if (!userRes.data) {
+    return new Response('Unauthorized', { status: 401 })
+  }
 
-	const updateRes = await supabase
-		.from(SUPABASE_TABLES.USER_PROFILE)
-		.upsert({ username, id: userRes.data.user?.id })
+  const updateRes = await supabase
+    .from(SUPABASE_TABLES.USER_PROFILE)
+    .upsert({ username, id: userRes.data.user?.id })
 
-	if (updateRes.error) {
-		return new Response(updateRes.error.message, { status: 500 })
-	}
+  if (updateRes.error) {
+    return new Response(updateRes.error.message, { status: 500 })
+  }
 
-	return new Response(`Successfully updated profile for ${username}`)
+  return new Response(`Successfully updated profile for ${username}`)
 })
 
 // To invoke:
