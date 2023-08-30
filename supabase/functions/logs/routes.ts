@@ -61,19 +61,23 @@ app
 
 			const query = `
 			from(bucket: "arkiver_logs")
-				|> range(start: ${start ?? 0}, stop: ${
-				stop ?? new Date().toISOString()
-			})
+				|> range(start: ${start ?? 0}, stop: ${stop ?? new Date().toISOString()})
 				|> filter(fn: (r) => r["_measurement"] == "arkive_log")
 				|> filter(fn: (r) => r["_field"] == "message")
 				|> filter(fn: (r) => r["id"] == "${arkiveId}")
 				|> filter(fn: (r) => r["majorVersion"] == "${splitVersion[0]}")
 				|> filter(fn: (r) => r["minorVersion"] == "${splitVersion[1]}")
-				|> filter(fn: (r) => r["source"] == "${source ?? 'arkive'}")
-				|> filter(fn: (r) => r["level_name"] == "${level ?? 'INFO'}")
-		    |> sort(columns: ["_time"], desc: true)
+				${source && source.length !== 0
+					? `|> filter(fn: (r) => contains(value: r["source"], set: ${source}))`
+					: ''
+				}
+				${level && level.length !== 0
+					? `|> filter(fn: (r) => contains(value: r["level_name"], set: ${level}))`
+					: ''
+				}
+				|> sort(columns: ["_time"], desc: true)
 				|> limit(n: ${limit}, offset: ${offset})
-		`
+			`
 
 			console.log(query)
 
