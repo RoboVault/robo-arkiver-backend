@@ -1,5 +1,12 @@
 import { ArkiveMessageEvent } from '../manager/types.ts'
-import { arkiver, influx, log, mongoose, path as denoPath } from '../../deps.ts'
+import {
+  arkiver,
+  influx,
+  log,
+  mongo,
+  mongoose,
+  path as denoPath,
+} from '../../deps.ts'
 import { logger } from '../logger.ts'
 import { ArkiveInfluxLogger } from './logger.ts'
 import { createManifestHandlers, getEnv } from '../utils.ts'
@@ -106,15 +113,24 @@ self.onmessage = async (e: MessageEvent<ArkiveMessageEvent>) => {
 
       log.setup(extendedLogConfig)
 
-      await mongoose.connect(mongoConnection, {
-        dbName: `${arkive.id}-${arkive.deployment.major_version}`,
-      })
+      if (manifest.entities.length > 0) {
+        await mongoose.connect(mongoConnection, {
+          dbName: `${arkive.id}-${arkive.deployment.major_version}`,
+        })
+      }
+
+      const client = new mongo.MongoClient()
+      await client.connect(mongoConnection)
+      const db = client.database(
+        `${arkive.id}-${arkive.deployment.major_version}`,
+      )
 
       const instance = new arkiver.Arkiver({
         manifest,
         noDb: false,
         rpcUrls,
         arkiveData: arkive,
+        db,
       })
       instance.addEventListener('synced', () => {
         self.postMessage({ topic: 'synced', data: { arkive } })

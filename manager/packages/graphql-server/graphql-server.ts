@@ -1,9 +1,12 @@
 import {
   arkiver,
   arkiverMetadata,
+  arkiverSpawnSources,
   arkiverTypes,
   graphQLCompose,
   grapQLYoga,
+  mergeSchemas,
+  mongo,
   mongoose,
   path as denoPath,
   redis,
@@ -21,22 +24,28 @@ import { SupabaseProvider } from '../providers/supabase.ts'
 export class GraphQLServer {
   private pathToYoga: Map<
     string,
-    // deno-lint-ignore ban-types
-    grapQLYoga.YogaServerInstance<{}, {}>
+    // deno-lint-ignore ban-types no-explicit-any
+    grapQLYoga.YogaServerInstance<{}, any>
   > = new Map()
   private arkiveIdToHighestVersion: Map<number, number> = new Map()
   private apiAuthProvider: ApiAuthProvider
   private arkiveProvider: ArkiveProvider
   private redis?: redis.Redis
+  private mongoClient: mongo.MongoClient
 
   constructor(
-    params: { supabase: supabase.SupabaseClient; environment: string },
+    params: {
+      supabase: supabase.SupabaseClient
+      environment: string
+      mongoClient: mongo.MongoClient
+    },
   ) {
     this.apiAuthProvider = new SupabaseAuthProvider(params.supabase)
     this.arkiveProvider = new SupabaseProvider({
       environment: params.environment,
       supabase: params.supabase,
     })
+    this.mongoClient = params.mongoClient
   }
 
   async run() {
@@ -107,36 +116,54 @@ export class GraphQLServer {
       )
       return
     }
-    const connection = mongoose.connections[0].useDb(
-      `${arkive.id}-${arkive.deployment.major_version}`,
-    )
-    const models = manifest.entities.map((
-      entity: { model: mongoose.Model<unknown>; list: boolean },
-    ) => ({
-      model: connection.model(entity.model.modelName, entity.model.schema),
-      list: entity.list,
-    }))
-    const metadata = {
-      model: connection.model(
-        arkiverMetadata.ArkiverMetadata.modelName,
-        arkiverMetadata.ArkiverMetadata.schema,
-      ),
-      list: true,
+
+    const schemas = []
+
+    if (manifest.entities.length > 0) {
+      const connection = mongoose.connections[0].useDb(
+        `${arkive.id}-${arkive.deployment.major_version}`,
+      )
+      const models = manifest.entities.map((
+        entity: { model: mongoose.Model<unknown>; list: boolean },
+      ) => ({
+        model: connection.model(entity.model.modelName, entity.model.schema),
+        list: entity.list,
+      }))
+
+      const schemaComposer = new graphQLCompose.SchemaComposer()
+      arkiver.buildSchemaFromEntities(schemaComposer, models)
+      if (manifest.schemaComposerCustomizer) {
+        manifest.schemaComposerCustomizer(schemaComposer)
+      }
+      const schema = schemaComposer.buildSchema()
+      schemas.push(schema)
     }
 
-    const schemaComposer = new graphQLCompose.SchemaComposer()
-    arkiver.buildSchemaFromEntities(schemaComposer, [
-      ...models,
-      metadata,
-    ])
-    if (manifest.schemaComposerCustomizer) {
-      manifest.schemaComposerCustomizer(schemaComposer)
-    }
-    const schema = schemaComposer.buildSchema()
+    const asc = new arkiver.ArkiveSchemaComposer()
+    asc.addCollection(arkiverMetadata.ArkiveMetadata)
+    asc.addCollection(arkiverSpawnSources.SpawnedSource)
+    manifest.collections.forEach((collection) =>
+      asc.addCollection(collection.collection)
+    )
+
+    const { schema: ascSchema, createLoaders } = asc.buildSchema()
+
+    schemas.push(ascSchema)
+
+    const schema = mergeSchemas({
+      schemas,
+    })
+
+    const db = this.mongoClient.database(
+      `${arkive.id}-${arkive.deployment.major_version}`,
+    )
 
     const options = {
       schema,
-      fetchAPI: { Response },
+      context: () => ({
+        db,
+        loaders: createLoaders(db),
+      }),
       graphiql: { title: `${username}/${arkive.name}` },
       landingPage: false,
     }

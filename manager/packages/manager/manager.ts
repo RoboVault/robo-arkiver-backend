@@ -1,6 +1,6 @@
 import { SupabaseProvider } from '../providers/supabase.ts'
 import { ArkiveProvider, DataProvider } from '../providers/interfaces.ts'
-import { arkiverTypes, path } from '../../deps.ts'
+import { arkiverTypes, mongo, path } from '../../deps.ts'
 import { logger } from '../logger.ts'
 import { collectRpcUrls, getEnv, getSupabaseClient, rm } from '../utils.ts'
 import { ArkiveMessageEvent, NewArkiveMessageEvent } from './types.ts'
@@ -19,6 +19,7 @@ export class ArkiveManager {
   private rpcUrls?: Record<string, string>
   private options: { server: boolean; manager: boolean }
   private faultyArkives?: FaultyArkives
+  private mongoClient: mongo.MongoClient
 
   constructor(params: {
     environment: string
@@ -42,13 +43,22 @@ export class ArkiveManager {
       this.dataProvider = new MongoDataProvider()
       this.rpcUrls = collectRpcUrls()
     }
+
+    this.mongoClient = new mongo.MongoClient()
+
     if (this.options.server) {
-      this.graphQLServer = new GraphQLServer({ environment, supabase })
+      this.graphQLServer = new GraphQLServer({
+        environment,
+        supabase,
+        mongoClient: this.mongoClient,
+      })
     }
   }
 
   public async init() {
     try {
+      await this.mongoClient.connect(getEnv('MONGO_CONNECTION'))
+
       if (this.options.server) {
         await this.graphQLServer?.run()
       }
