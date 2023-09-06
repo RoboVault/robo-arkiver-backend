@@ -17,7 +17,22 @@ const getLimitOffset = (page: number) => {
 
 export const app = new Hono()
 
+
 app
+  /**
+   * url: /logs/{arkiveId}/{version}
+   * 
+   * path paramerter:
+   * - arkiveId: string (required) - The id of the arkive
+   * - version: string (required) - The version of the arkive
+   * 
+   * query paramerter:
+   * - start: string (optional) - The start date of the logs
+   * - stop: string (optional) - The stop date of the logs
+   * - source: string (optional) - The source of the logs 
+   * - level: string (optional) - The level of the logs
+   * - page: string (optional) - The page of the logs
+   */
   .get(
     '/:arkiveId/:version',
     validator('query', (value) => {
