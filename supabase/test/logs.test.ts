@@ -5,10 +5,7 @@ import {
 import 'https://deno.land/std@0.173.0/dotenv/load.ts'
 import { getEnv } from '../functions/_shared/utils.ts'
 
-// const LOGS_URL = 'http://localhost:8000/logs'
-
-// TODO: Remove this - do not use this
-const LOGS_URL = 'https://egutsbjqffrqmhqbbfia.functions.supabase.co/logs-test'
+const LOGS_URL = 'http://localhost:8000/logs'
 
 const ANON_KEY = getEnv('SUPABASE_ANON_KEY')
 const headers = (token: string = ANON_KEY) => {
