@@ -1,14 +1,14 @@
-import { assertEquals } from "https://deno.land/std@0.174.0/testing/asserts.ts";
-import "https://deno.land/std@0.173.0/dotenv/load.ts";
-import { getEnv } from "../functions/_shared/utils.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.5.0";
+import { assertEquals } from 'https://deno.land/std@0.174.0/testing/asserts.ts'
+import 'https://deno.land/std@0.173.0/dotenv/load.ts'
+import { getEnv } from '../functions/_shared/utils.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.5.0'
 
 const FUNCTIONS_URL = 'http://0.0.0.0:8000'
-const ANON_KEY = getEnv("SUPABASE_ANON_KEY")
+const ANON_KEY = getEnv('SUPABASE_ANON_KEY')
 const headers = (token: string = ANON_KEY) => {
   return {
     Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
   }
 }
 
@@ -25,9 +25,9 @@ const headers = (token: string = ANON_KEY) => {
  */
 
 async function getAccessToken() {
-  const supabaseUrl = getEnv("SUPABASE_URL");
-  const email = getEnv("SUPABASE_EMAIL");
-  const password = getEnv("SUPABASE_PASSWORD");
+  const supabaseUrl = getEnv('SUPABASE_URL')
+  const email = getEnv('SUPABASE_EMAIL')
+  const password = getEnv('SUPABASE_PASSWORD')
   const supabase = createClient(supabaseUrl, ANON_KEY)
   const login = await supabase.auth.signInWithPassword({
     email,
@@ -38,23 +38,22 @@ async function getAccessToken() {
   return login.data.session.access_token
 }
 
-Deno.test({ 
-  name: "Successfully creates key",
+Deno.test({
+  name: 'Successfully creates key',
   fn: async () => {
     const url = `${FUNCTIONS_URL}/api-key`
     const token = await getAccessToken()
     const body = JSON.stringify({ name: 'unit test key!' })
     const response = await fetch(url, {
-      method: "POST",
+      method: 'POST',
       headers: headers(token),
-      body
-    });
+      body,
+    })
     assertEquals(response.status, 200)
     const { name, apiKey } = await response.json()
     assertEquals(name, 'unit test key!')
     assertEquals(apiKey.length, 64)
   },
   sanitizeResources: false,
-  sanitizeOps: false
-});
-
+  sanitizeOps: false,
+})

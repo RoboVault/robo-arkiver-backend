@@ -19,3 +19,28 @@ export const getSupabaseClient = (c: Context) => {
 
   return supabase
 }
+
+
+/**
+ * Add check if value is not a valid JSON format
+ * @param value 
+ * @returns 
+ */
+export const parseJSON = (value: any) => {
+  if (value) {
+    let newValue = [value]
+
+    try {
+      // check if value is a valid array
+      newValue = JSON.parse(value)
+
+      const stringified = JSON.stringify(newValue)
+      return stringified
+    } catch (error) {
+      const formatted = JSON.stringify(newValue)
+      return formatted
+    }
+  }
+
+  return value
+}
