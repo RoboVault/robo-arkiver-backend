@@ -1,5 +1,6 @@
 import { postgres, SupabaseClient } from '../_shared/deps.ts'
 import { HttpError } from '../_shared/http_error.ts'
+import { Arkive } from "../_shared/models/arkive.ts";
 import { getUsernameFromUserId } from '../_shared/username.ts'
 import { getEnv } from '../_shared/utils.ts'
 
@@ -56,45 +57,22 @@ export async function get(
 			public.arkive a
 		JOIN
 			public.user_profile up ON a.user_id = up.id
-		${
-    minimal ? sql`` : sql`LEFT JOIN
+		${minimal ? sql`` : sql`LEFT JOIN
 			public.deployments d ON a.id = d.arkive_id`
-  }
-		${
-    _publicOnly
+    }
+		${_publicOnly
       ? username
         ? arkivename
           ? sql`WHERE a.public = true AND up.username = ${username} AND a.name = ${arkivename}`
           : sql`WHERE a.public = true AND up.username = ${username}`
         : sql`WHERE a.public = true`
       : username
-      ? arkivename
-        ? sql`WHERE up.username = ${username} AND a.name = ${arkivename}`
-        : sql`WHERE up.username = ${username}`
-      : sql`WHERE a.public = true` // return empty array
-  }
+        ? arkivename
+          ? sql`WHERE up.username = ${username} AND a.name = ${arkivename}`
+          : sql`WHERE up.username = ${username}`
+        : sql`WHERE a.public = true` // return empty array
+    }
 	`
-
-  type Arkive = {
-    id: number
-    name: string
-    user_id: string
-    public: boolean
-    thumbnail_url: string
-    code_repo_url: string
-    project_url: string
-    environment: string
-    username: string
-    featured: boolean
-    deployments: {
-      id: number
-      created_at: string
-      major_version: number
-      minor_version: number
-      status: string
-      manifest: string
-    }[]
-  }
 
   let arkives
 
