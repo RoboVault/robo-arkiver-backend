@@ -1,4 +1,4 @@
-import { cors, Hono, validator } from '../_shared/deps.ts'
+import { Hono, validator } from '../_shared/deps.ts'
 import { getSupabaseClient } from '../_shared/utils.ts'
 import { del } from './delete.ts'
 import { get } from './get.ts'
@@ -13,14 +13,27 @@ app
     const minimal = c.req.query('minimal') === 'true'
     const supabase = getSupabaseClient(c)
 
-    const data = await get(supabase, {
-      username,
-      arkivename,
-      minimal,
-      publicOnly: false,
-    })
+    /**
+     * Catch error received here and throw the actual error encountered.
+     * 
+     * This is to avoid throwing unintentional internal server error
+     * when there is error thrown in get()
+     * 
+     * see: get.ts
+     */
+    try {
+      const data = await get(supabase, {
+        username,
+        arkivename,
+        minimal,
+        publicOnly: false,
+      })
 
-    return c.json(data)
+      return c.json(data)
+
+    } catch (error) {
+      return c.json({ error: error.message }, error.status)
+    }
   })
   .get('/:username', async (c) => {
     const username = c.req.param('username')
@@ -28,25 +41,35 @@ app
     const publicOnly = c.req.query('publicOnly') === 'true'
     const supabase = getSupabaseClient(c)
 
-    const data = await get(supabase, {
-      username,
-      minimal,
-      publicOnly,
-    })
+    try {
+      const data = await get(supabase, {
+        username,
+        minimal,
+        publicOnly,
+      })
 
-    return c.json(data)
+      return c.json(data)
+
+    } catch (error) {
+      return c.json({ error: error.message }, error.status)
+    }
   })
   .get('/', async (c) => {
     const minimal = c.req.query('minimal') === 'true'
     const publicOnly = c.req.query('publicOnly') === 'true'
     const supabase = getSupabaseClient(c)
 
-    const data = await get(supabase, {
-      minimal,
-      publicOnly,
-    })
+    try {
+      const data = await get(supabase, {
+        minimal,
+        publicOnly,
+      })
 
-    return c.json(data)
+      return c.json(data)
+
+    } catch (error) {
+      return c.json({ error: error.message }, error.status)
+    }
   })
   .post(
     '/',
