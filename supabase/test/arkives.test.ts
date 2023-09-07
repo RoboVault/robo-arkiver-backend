@@ -1,4 +1,3 @@
-// url_test.ts
 import { assertEquals, assertNotEquals } from 'https://deno.land/std@0.174.0/testing/asserts.ts'
 import { getEnv } from '../functions/_shared/utils.ts'
 import { z } from 'https://deno.land/x/zod@v3.21.4/mod.ts'
