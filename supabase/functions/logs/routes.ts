@@ -100,17 +100,21 @@ app
        * https://community.influxdata.com/t/impact-of-contains-on-performance/16831/2
        */
       const getSeveritiesFilters = () => {
-        const filter = levels?.map((severity: string) => {
-          return `r["level_name"] == "${severity}"`
-        }).join(' or ')
+        const filter = levels && levels.length !== 0
+          ? levels.map((severity: string) => {
+            return `r["level_name"] == "${severity}"`
+          }).join(' or ')
+          : `r["level_name"] == ""`
 
         return filter
       }
 
       const getSourcesFilters = () => {
-        const filter = sources?.map((source: string) => {
-          return `r["source"] == "${source}"`
-        }).join(' or ')
+        const filter = sources && sources.length !== 0
+          ? sources.map((source: string) => {
+            return `r["source"] == "${source}"`
+          }).join(' or ')
+          : `r["source"] == ""`
 
         return filter
       }
@@ -123,11 +127,11 @@ app
 				|> filter(fn: (r) => r["id"] == "${arkiveId}")
 				|> filter(fn: (r) => r["majorVersion"] == "${splitVersion[0]}")
 				|> filter(fn: (r) => r["minorVersion"] == "${splitVersion[1]}")
-				${sources && sources.length !== 0
+        ${typeof reqSource !== 'undefined'
           ? `|> filter(fn: (r) => ${getSourcesFilters()})`
           : ''
         }
-				${levels && levels.length !== 0
+				${typeof reqLevel !== 'undefined'
           ? `|> filter(fn: (r) => ${getSeveritiesFilters()})`
           : ''
         }
