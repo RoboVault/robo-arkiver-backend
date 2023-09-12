@@ -76,8 +76,8 @@ app
         return c.text(`version must be in the format of major.minor`)
       }
 
-      const source = parseJSON(reqSource)
-      const level = parseJSON(reqLevel)
+      const sources = parseJSON(reqSource)
+      const levels = parseJSON(reqLevel)
 
       const { limit, offset } = getLimitOffset(parseInt(page ?? 0))
 
@@ -90,6 +90,31 @@ app
         token: influxDBToken,
       }).getQueryApi(influxDBOrg)
 
+      /**
+       * This is a workaround to filter using an array (e.g ["INFO", "DEBUG"])
+       * Currently, the contains() function has an impact on performance.
+       * 
+       * So to avoid poor performance in query, use OR conditions instead.
+       * 
+       * See:
+       * https://community.influxdata.com/t/impact-of-contains-on-performance/16831/2
+       */
+      const getSeveritiesFilters = () => {
+        const filter = levels?.map((severity: string) => {
+          return `r["level_name"] == "${severity}"`
+        }).join(' or ')
+
+        return filter
+      }
+
+      const getSourcesFilters = () => {
+        const filter = sources?.map((source: string) => {
+          return `r["source"] == "${source}"`
+        }).join(' or ')
+
+        return filter
+      }
+
       const query = `
 			from(bucket: "arkiver_logs")
 				|> range(start: ${start ?? 0}, stop: ${stop ?? new Date().toISOString()})
@@ -98,12 +123,12 @@ app
 				|> filter(fn: (r) => r["id"] == "${arkiveId}")
 				|> filter(fn: (r) => r["majorVersion"] == "${splitVersion[0]}")
 				|> filter(fn: (r) => r["minorVersion"] == "${splitVersion[1]}")
-				${source && source.length !== 0
-          ? `|> filter(fn: (r) => contains(value: r["source"], set: ${source}))`
+				${sources && sources.length !== 0
+          ? `|> filter(fn: (r) => ${getSourcesFilters()})`
           : ''
         }
-				${level && level.length !== 0
-          ? `|> filter(fn: (r) => contains(value: r["level_name"], set: ${level}))`
+				${levels && levels.length !== 0
+          ? `|> filter(fn: (r) => ${getSeveritiesFilters()})`
           : ''
         }
 				|> sort(columns: ["_time"], desc: true)
