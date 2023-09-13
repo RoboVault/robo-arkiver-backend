@@ -26,7 +26,7 @@ export const getSupabaseClient = (c: Context) => {
  * @param value 
  * @returns 
  */
-export const parseJSON = (value: any) => {
+export const stringifyJSON = (value: any) => {
   if (value) {
     let newValue = [value]
 
@@ -43,4 +43,15 @@ export const parseJSON = (value: any) => {
   }
 
   return value
+}
+
+export const parseJSON = (value: any) => {
+  if (value) {
+    try {
+      return JSON.parse(value)
+    } catch (error) {
+      console.log('Not a valid JSON:: ', error.message)
+      return [value]
+    }
+  }
 }
