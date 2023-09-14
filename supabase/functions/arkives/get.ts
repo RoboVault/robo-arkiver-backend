@@ -39,7 +39,6 @@ export async function get(
   ]
 
   const extraColumns = [
-    'd.id',
     'd.created_at',
     'd.major_version',
     'd.minor_version',
@@ -48,7 +47,37 @@ export async function get(
     'd.manifest',
   ]
 
-  const columns = minimal ? minimalColumns : minimalColumns.concat(extraColumns)
+  // latest deployment data
+  const deploymentColumns = [
+    'd.deployment_date',
+    'd.major_version',
+    'd.minor_version',
+    'd.status',
+    'd.arkive_id',
+  ]
+
+  const columns = minimal
+    ? minimalColumns.concat(deploymentColumns)
+    : minimalColumns.concat(extraColumns)
+
+  const latestDeployment = sql`
+    SELECT
+      d.arkive_id,
+      d.created_at as deployment_date,
+      d.major_version,
+      d.minor_version,
+      d.status
+    FROM public.deployments d
+    INNER JOIN (
+        SELECT
+          arkive_id,
+          MAX(created_at) as deployment_date
+          FROM public.deployments
+          GROUP BY arkive_id
+    ) ld 
+      ON d.arkive_id = ld.arkive_id 
+      AND d.created_at = ld.deployment_date
+  `
 
   const arkivesRaw = await sql`
 		SELECT
@@ -57,9 +86,12 @@ export async function get(
 			public.arkive a
 		JOIN
 			public.user_profile up ON a.user_id = up.id
-		${minimal ? sql`` : sql`LEFT JOIN
-			public.deployments d ON a.id = d.arkive_id`
+
+		${minimal
+      ? sql`LEFT JOIN (${latestDeployment}) d ON a.id = d.arkive_id`
+      : sql`LEFT JOIN public.deployments d ON a.id = d.arkive_id`
     }
+
 		${_publicOnly
       ? username
         ? arkivename
