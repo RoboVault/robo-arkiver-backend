@@ -2,7 +2,7 @@ import { postgres, SupabaseClient } from '../_shared/deps.ts'
 import { HttpError } from '../_shared/http_error.ts'
 import { Arkive } from "../_shared/models/arkive.ts";
 import { getUsernameFromUserId } from '../_shared/username.ts'
-import { getEnv } from '../_shared/utils.ts'
+import { getEnv, getLimitOffset } from '../_shared/utils.ts'
 
 export async function get(
   supabase: SupabaseClient,
@@ -11,9 +11,20 @@ export async function get(
     arkivename?: string
     minimal: boolean
     publicOnly: boolean
+    page?: string,
+    rows?: string
   },
 ) {
-  const { username, arkivename, minimal, publicOnly } = params
+  const {
+    username,
+    arkivename,
+    minimal,
+    publicOnly,
+    page,
+    rows
+  } = params
+
+  const { limit, offset } = getLimitOffset(parseInt(page ?? '0'), parseInt(rows ?? '50'))
 
   const _publicOnly = !publicOnly
     ? await shouldReturnOnlyPublic(supabase, params)
@@ -104,6 +115,10 @@ export async function get(
           : sql`WHERE up.username = ${username}`
         : sql`WHERE a.public = true` // return empty array
     }
+
+    ORDER BY d.deployment_date DESC
+    LIMIT ${limit}
+    OFFSET ${offset}
 	`
 
   let arkives

@@ -39,6 +39,10 @@ app
     const username = c.req.param('username')
     const minimal = c.req.query('minimal') === 'true'
     const publicOnly = c.req.query('publicOnly') === 'true'
+
+    const page = c.req.query('page')
+    const rows = c.req.query('rows')
+
     const supabase = getSupabaseClient(c)
 
     try {
@@ -46,6 +50,8 @@ app
         username,
         minimal,
         publicOnly,
+        page,
+        rows
       })
 
       return c.json(data)
@@ -57,12 +63,18 @@ app
   .get('/', async (c) => {
     const minimal = c.req.query('minimal') === 'true'
     const publicOnly = c.req.query('publicOnly') === 'true'
+
+    const page = c.req.query('page')
+    const rows = c.req.query('rows')
+
     const supabase = getSupabaseClient(c)
 
     try {
       const data = await get(supabase, {
         minimal,
         publicOnly,
+        page,
+        rows
       })
 
       return c.json(data)

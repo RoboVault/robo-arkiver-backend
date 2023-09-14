@@ -55,3 +55,11 @@ export const parseJSON = (value: any) => {
     }
   }
 }
+
+export const getLimitOffset = (page: number, limit = 50) => {
+  if (page === 0) {
+    return { limit, offset: 0 }
+  }
+
+  return { limit, offset: page * limit }
+}

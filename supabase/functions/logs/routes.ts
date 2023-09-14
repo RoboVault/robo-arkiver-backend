@@ -1,22 +1,11 @@
 import { Hono, InfluxDB, validator } from '../_shared/deps.ts'
-import { parseJSON } from '../_shared/utils.ts'
+import { getLimitOffset, parseJSON } from '../_shared/utils.ts'
 
 const influxDBUrl = 'http://ec2-3-238-164-39.compute-1.amazonaws.com:8086/'
 const influxDBStagingUrl = 'http://ec2-54-174-96-237.compute-1.amazonaws.com:8086/'
 const influxDBOrg = 'robolabs'
 
-const getLimitOffset = (page: number) => {
-  const limit = 50
-
-  if (page === 0) {
-    return { limit, offset: 0 }
-  }
-
-  return { limit, offset: page * limit }
-}
-
 export const app = new Hono()
-
 
 app
   /**
