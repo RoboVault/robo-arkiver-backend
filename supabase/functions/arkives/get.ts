@@ -89,7 +89,7 @@ export async function get(
   const arkivesRaw = await sql`
 		SELECT
 			${sql(columns)},
-      ${(!username && !arkivename) && sql`COUNT(*) OVER() AS total_arkives`}
+      ${(!arkivename) && sql`COUNT(*) OVER() AS total_arkives`}
 		FROM
 			public.arkive a
 		JOIN
