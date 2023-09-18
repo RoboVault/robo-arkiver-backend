@@ -1,5 +1,7 @@
 import { postgres, SupabaseClient } from '../_shared/deps.ts'
 import { HttpError } from '../_shared/http_error.ts'
+import { arkiveMapper } from "../_shared/mappers.ts";
+import { deploymentMapper } from "../_shared/mappers.ts";
 import { Arkive } from "../_shared/models/arkive.ts";
 import { getUsernameFromUserId } from '../_shared/username.ts'
 import { getEnv, getLimitOffset } from '../_shared/utils.ts'
@@ -49,50 +51,45 @@ export async function get(
     'up.username',
   ]
 
-  const extraColumns = [
+  const deploymentColumns = [
     'd.created_at',
     'd.major_version',
     'd.minor_version',
     'd.status',
     'd.arkive_id',
-    'd.manifest',
   ]
 
-  // latest deployment data
-  const deploymentColumns = [
-    'd.deployment_date',
-    'd.major_version',
-    'd.minor_version',
-    'd.status',
-    'd.arkive_id',
+  const extraColumns = [
+    'd.manifest',
   ]
 
   const columns = minimal
     ? minimalColumns.concat(deploymentColumns)
-    : minimalColumns.concat(extraColumns)
+    : minimalColumns
+      .concat(deploymentColumns)
+      .concat(extraColumns)
 
   const latestDeployment = sql`
     SELECT
-      d.arkive_id,
-      d.created_at as deployment_date,
-      d.major_version,
-      d.minor_version,
-      d.status
+    ${sql(deploymentColumns)}
     FROM public.deployments d
     INNER JOIN (
         SELECT
           arkive_id,
-          MAX(created_at) as deployment_date
+          MAX(created_at) as created_at
           FROM public.deployments
           GROUP BY arkive_id
     ) ld 
       ON d.arkive_id = ld.arkive_id 
-      AND d.created_at = ld.deployment_date
+      AND d.created_at = ld.created_at
   `
 
+  // TODO: Fix total count
+  // Why does it return more count when !minimal?
   const arkivesRaw = await sql`
 		SELECT
-			${sql(columns)}
+			${sql(columns)},
+      COUNT(*) OVER() AS total_arkives
 		FROM
 			public.arkive a
 		JOIN
@@ -116,39 +113,25 @@ export async function get(
         : sql`WHERE a.public = true` // return empty array
     }
 
-    ORDER BY d.deployment_date DESC
     LIMIT ${limit}
     OFFSET ${offset}
 	`
 
-  let arkives
+  let arkivesData
 
   if (!minimal) {
     const grouped: Record<number, Arkive> = {}
 
     arkivesRaw.forEach((arkive) => {
       const deployment = {
-        'id': arkive.id,
-        'created_at': arkive.created_at,
-        'major_version': arkive.major_version,
-        'minor_version': arkive.minor_version,
-        'status': arkive.status,
+        ...deploymentMapper(arkive),
         'file_path': arkive.file_path,
         'manifest': arkive.manifest,
       }
 
       if (!grouped[arkive.arkive_id]) {
         grouped[arkive.arkive_id] = {
-          'id': arkive.arkive_id,
-          'name': arkive.name,
-          'user_id': arkive.user_id,
-          'public': arkive.public,
-          'thumbnail_url': arkive.thumbnail_url,
-          'code_repo_url': arkive.code_repo_url,
-          'project_url': arkive.project_url,
-          'environment': arkive.environment,
-          'username': arkive.username,
-          'featured': arkive.featured,
+          ...arkiveMapper(arkive),
           'deployments': [deployment],
         }
       } else {
@@ -156,20 +139,35 @@ export async function get(
       }
     })
 
-    arkives = Object.values(grouped)
+    arkivesData = {
+      total_arkives: arkivesRaw[0].total_arkives,
+      arkives: Object.values(grouped)
+    }
   } else {
-    arkives = arkivesRaw
+    const mappedArkives = arkivesRaw.map((arkive) => {
+      return {
+        ...arkiveMapper(arkive),
+        latest_deployment: {
+          ...deploymentMapper(arkive)
+        }
+      }
+    })
+
+    arkivesData = {
+      total_arkives: arkivesRaw[0].total_arkives,
+      arkives: mappedArkives
+    }
   }
 
-  if (username && arkivename && arkives.length === 0) {
+  if (username && arkivename && arkivesData.arkives.length === 0) {
     throw new HttpError(404, 'Arkive not found')
   }
 
   if (username && arkivename) {
-    return arkives[0]
+    return arkivesData.arkives[0]
   }
 
-  return arkives
+  return arkivesData
 }
 
 const shouldReturnOnlyPublic = async (client: SupabaseClient, params: {
