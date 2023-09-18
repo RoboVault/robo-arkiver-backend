@@ -17,7 +17,7 @@ export const arkiveMapper = (arkive: postgres.Row) => {
 
 export const deploymentMapper = (arkive: postgres.Row) => {
     return {
-        'id': arkive.id,
+        'id': arkive.arkive_id,
         'created_at': arkive.created_at,
         'major_version': arkive.major_version,
         'minor_version': arkive.minor_version,

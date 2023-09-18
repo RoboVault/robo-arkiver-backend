@@ -89,7 +89,7 @@ export async function get(
   const arkivesRaw = await sql`
 		SELECT
 			${sql(columns)},
-      COUNT(*) OVER() AS total_arkives
+      ${(!username && !arkivename) && sql`COUNT(*) OVER() AS total_arkives`}
 		FROM
 			public.arkive a
 		JOIN
@@ -117,7 +117,7 @@ export async function get(
     OFFSET ${offset}
 	`
 
-  let arkivesData
+  let arkives
 
   if (!minimal) {
     const grouped: Record<number, Arkive> = {}
@@ -139,10 +139,8 @@ export async function get(
       }
     })
 
-    arkivesData = {
-      total_arkives: arkivesRaw[0].total_arkives,
-      arkives: Object.values(grouped)
-    }
+
+    arkives = Object.values(grouped)
   } else {
     const mappedArkives = arkivesRaw.map((arkive) => {
       return {
@@ -153,21 +151,21 @@ export async function get(
       }
     })
 
-    arkivesData = {
-      total_arkives: arkivesRaw[0].total_arkives,
-      arkives: mappedArkives
-    }
+    arkives = mappedArkives
   }
 
-  if (username && arkivename && arkivesData.arkives.length === 0) {
+  if (username && arkivename && arkives.length === 0) {
     throw new HttpError(404, 'Arkive not found')
   }
 
   if (username && arkivename) {
-    return arkivesData.arkives[0]
+    return arkives[0]
   }
 
-  return arkivesData
+  return {
+    total_arkives: arkives.length ? arkivesRaw[0].total_arkives : 0,
+    arkives
+  }
 }
 
 const shouldReturnOnlyPublic = async (client: SupabaseClient, params: {
