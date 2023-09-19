@@ -62,7 +62,6 @@ app
     }
   })
   .get('/', async (c) => {
-    // TODO: Change naming convention -> flags should start with is
     const minimal = c.req.query('minimal') === 'true'
     const publicOnly = c.req.query('publicOnly') === 'true'
     const isFeatured = c.req.query('featured') === 'true'

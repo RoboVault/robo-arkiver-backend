@@ -1,4 +1,5 @@
 import { postgres, SupabaseClient } from '../_shared/deps.ts'
+import { HttpError } from "../_shared/http_error.ts";
 import { arkiveMapper, deploymentMapper } from "../_shared/mappers.ts";
 import { Arkive } from '../_shared/models/arkive.ts';
 import { getEnv, getLimitOffset, hasActiveUser } from '../_shared/utils.ts'
@@ -115,7 +116,7 @@ const getSelectClause = (sql: postgres.Sql, columns: string[]) => {
 }
 
 // deno-lint-ignore no-explicit-any
-const mapToArkivesSchema = (isMinimal = false, response: any[]) => {
+const mapToArkivesSchema = (response: any[], isMinimal = false) => {
     let mappedResponse = response
 
     if (isMinimal) {
@@ -218,7 +219,7 @@ export const getFeaturedArkives = async (props: ArkivesProps) => {
         OFFSET ${offset}
     `
 
-    const arkives = mapToArkivesSchema(isMinimal, data)
+    const arkives = mapToArkivesSchema(data, isMinimal)
 
     const totalArkives = isMinimal
         ? arkives.length ? data[0].total_arkives : 0
@@ -230,7 +231,28 @@ export const getFeaturedArkives = async (props: ArkivesProps) => {
     }
 }
 
-// TODO:
-export const getArkiveByName = () => {
+/**
+ * Return specific arkive using arkive's name
+ */
+export const getArkiveByName = async (props: ArkivesProps) => {
+    const { username = '', arkivename = '', isMinimal } = props.params
 
+    const { sql } = initDbConnection()
+    const { columns } = getColumns()
+
+    const selectQuery = getSelectClause(sql, columns)
+
+    const data = await sql`
+        ${selectQuery}
+        LEFT JOIN public.deployments d ON a.id = d.arkive_id
+        WHERE a.name = ${arkivename} AND up.username = ${username}
+    `
+
+    const arkives = mapToArkivesSchema(data, isMinimal)
+
+    if (arkives.length === 0) {
+        throw new HttpError(404, 'Arkive not found')
+    } else {
+        return arkives[0]
+    }
 }
