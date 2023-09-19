@@ -2,6 +2,7 @@ import { Hono, validator } from '../_shared/deps.ts'
 import { getSupabaseClient } from '../_shared/utils.ts'
 import { del } from './delete.ts'
 import { get } from './get.ts'
+import { getFeaturedArkives } from "./getV2.ts";
 import { patch } from './patch.ts'
 import { post, postSchema } from './post.ts'
 
@@ -61,8 +62,10 @@ app
     }
   })
   .get('/', async (c) => {
+    // TODO: Change naming convention -> flags should start with is
     const minimal = c.req.query('minimal') === 'true'
     const publicOnly = c.req.query('publicOnly') === 'true'
+    const isFeatured = c.req.query('featured') === 'true'
 
     const page = c.req.query('page')
     const rows = c.req.query('rows')
@@ -70,14 +73,25 @@ app
     const supabase = getSupabaseClient(c)
 
     try {
-      const data = await get(supabase, {
-        minimal,
-        publicOnly,
-        page,
-        rows
-      })
+      if (isFeatured) {
+        const data = await getFeaturedArkives({
+          supabase,
+          params: {
+            isMinimal: minimal
+          }
+        })
 
-      return c.json(data)
+        return c.json(data)
+      } else {
+        const data = await get(supabase, {
+          minimal,
+          publicOnly,
+          page,
+          rows
+        })
+
+        return c.json(data)
+      }
 
     } catch (error) {
       return c.json({ error: error.message }, error.status)

@@ -26,7 +26,7 @@ export async function get(
     rows
   } = params
 
-  const { limit, offset } = getLimitOffset(parseInt(page ?? '0'), parseInt(rows ?? '50'))
+  const { limit, offset } = getLimitOffset(page, rows)
 
   const _publicOnly = !publicOnly
     ? await shouldReturnOnlyPublic(supabase, params)
@@ -162,8 +162,12 @@ export async function get(
     return arkives[0]
   }
 
+  const totalArkives = minimal
+    ? arkives.length ? arkivesRaw[0].total_arkives : 0
+    : arkives.length
+
   return {
-    total_arkives: arkives.length ? arkivesRaw[0].total_arkives : 0,
+    total_arkives: totalArkives,
     arkives
   }
 }
