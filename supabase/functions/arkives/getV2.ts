@@ -214,7 +214,10 @@ export const getFeaturedArkives = async (props: ArkivesProps) => {
             ? sql`LEFT JOIN (${latestDeployment}) d ON a.id = d.arkive_id`
             : sql`LEFT JOIN public.deployments d ON a.id = d.arkive_id`
         }
-        WHERE a.featured = true ${isPublic ? sql`AND a.public = true` : ''}
+        ${isPublic
+            ? sql`WHERE a.featured = true AND a.public = true`
+            : sql`WHERE a.featured = true`
+        }
         LIMIT ${limit}
         OFFSET ${offset}
     `
