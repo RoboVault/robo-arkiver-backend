@@ -11,7 +11,7 @@ import { getEnv, getLimitOffset, hasActiveUser } from '../_shared/utils.ts'
  * [ ] getAllPublicArkives
  * [ ] getOtherUsersPublicArkives
  * [ ] getAllArkivesByUser
- * [ ] getArkiveByName
+ * [x] getArkiveByName
  * [x] getFeaturedArkives 
  */
 
@@ -241,13 +241,17 @@ export const getArkiveByName = async (props: ArkivesProps) => {
     const { username = '', arkivename = '', isMinimal } = props.params
 
     const { sql } = initDbConnection()
-    const { columns } = getColumns()
+    const { columns, deploymentColumns } = getColumns()
 
+    const latestDeployment = getLatestDeployment(sql, deploymentColumns)
     const selectQuery = getSelectClause(sql, columns)
 
     const data = await sql`
         ${selectQuery}
-        LEFT JOIN public.deployments d ON a.id = d.arkive_id
+        ${isMinimal
+            ? sql`LEFT JOIN (${latestDeployment}) d ON a.id = d.arkive_id`
+            : sql`LEFT JOIN public.deployments d ON a.id = d.arkive_id`
+        }
         WHERE a.name = ${arkivename} AND up.username = ${username}
     `
 
