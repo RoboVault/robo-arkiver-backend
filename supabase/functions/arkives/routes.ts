@@ -1,8 +1,7 @@
 import { Hono, validator } from '../_shared/deps.ts'
 import { getSupabaseClient } from '../_shared/utils.ts'
+import { getArkiveByName, getArkives, getArkivesByUser } from "./getV2.ts";
 import { del } from './delete.ts'
-import { get } from './get.ts'
-import { getArkives, getArkivesByUser } from "./getV2.ts";
 import { patch } from './patch.ts'
 import { post, postSchema } from './post.ts'
 
@@ -23,11 +22,13 @@ app
      * see: get.ts
      */
     try {
-      const data = await get(supabase, {
-        username,
-        arkivename,
-        minimal,
-        publicOnly: false,
+      const data = await getArkiveByName({
+        supabase,
+        params: {
+          username,
+          arkivename,
+          isMinimal: minimal
+        }
       })
 
       return c.json(data)

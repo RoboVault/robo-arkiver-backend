@@ -379,7 +379,9 @@ export const getArkiveByName = async (props: ArkivesProps) => {
         WHERE a.name = ${arkivename} AND up.username = ${username}
     `
 
-    const arkives = mapToArkivesSchema(data, isMinimal)
+    const arkives = data.length !== 0
+        ? mapToArkivesSchema(data, isMinimal)
+        : []
 
     if (arkives.length === 0) {
         throw new HttpError(404, 'Arkive not found')
