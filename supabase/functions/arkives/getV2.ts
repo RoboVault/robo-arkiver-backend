@@ -178,18 +178,21 @@ const mapToArkivesSchema = (response: any[], isMinimal = false) => {
 }
 
 /**
- * Always return public arkives when the endpoint is /arkives,
- * the only private arkives that can be returned are the arkives owned by the active user
- * and this can be fetched using /arkives/:username.
+ * Only return public arkives when there is no authenticated user,
+ * Otherwise, return all public arkives + private arkives of the active user
  * 
  * Endpoint: /arkives
  * 
  * Query params:
- * 1. featured: /arkives?featured=true
+ * 1. public: /arkives?public=false
+ *   - this will return private arkives of the authenticated user
+ * 
+ * 2. featured: /arkives?featured=true
  *   - use this to get the list of featured arkives
+ *   - returns public featured of other users and private featured owned by the active user
  *   - if this param is not provided, do not include this in where clause.
  * 
- * 2. excludeduser: /arkives?excludeduser=robolabs
+ * 3. excludeduser: /arkives?excludeduser=robolabs
  *   - this is a very specific case that will be used in UI
  *   - use this to get only the public arkives of other users aka "Community Arkives"
  *   - if this is not provided, all public arkives will be returned
@@ -203,8 +206,10 @@ const mapToArkivesSchema = (response: any[], isMinimal = false) => {
  */
 export const getArkives = async (props: ArkivesProps) => {
     const {
+        supabase,
         params: {
             isFeatured,
+            isPublic,
             page,
             rows,
             isMinimal,
@@ -221,13 +226,22 @@ export const getArkives = async (props: ArkivesProps) => {
     const selectQuery = getSelectClause(sql, columns)
     const minimalQuery = getMinimalQuery(sql, latestDeployment, isMinimal)
 
+    const hasUser = await supabase?.auth.getUser()
+    const user = hasUser?.data?.user?.user_metadata?.username || ''
+
     let arkives = []
 
     const data = await sql`
         ${selectQuery}
         ${minimalQuery}
 
-        WHERE a.public = true
+        WHERE 
+        ${typeof isPublic === 'undefined'
+            ? sql`(a.public = true OR (a.public = false AND up.username = ${user}))`
+            : isPublic === 'true'
+                ? sql`a.public = true`
+                : sql`a.public = false AND up.username = ${user}`
+        }
         ${typeof isFeatured !== 'undefined'
             ? sql`AND a.featured = ${isFeatured === 'true'}`
             : sql``
@@ -310,9 +324,9 @@ export const getArkivesByUser = async (props: ArkivesProps) => {
 
         WHERE up.username = ${username}
         ${hasUser
-            ? typeof isPublic === 'undefined'
-                ? sql``
-                : sql`AND a.public = ${isPublic === 'true'}`
+            ? typeof isPublic !== 'undefined'
+                ? sql`AND a.public = ${isPublic === 'true'}`
+                : sql``
             : sql`AND a.public = true`
         }
         ${typeof isFeatured !== 'undefined'
