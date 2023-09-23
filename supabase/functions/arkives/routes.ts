@@ -2,7 +2,7 @@ import { Hono, validator } from '../_shared/deps.ts'
 import { getSupabaseClient } from '../_shared/utils.ts'
 import { del } from './delete.ts'
 import { get } from './get.ts'
-import { getFeaturedArkives } from "./getV2.ts";
+import { getArkives, getArkivesByUser } from "./getV2.ts";
 import { patch } from './patch.ts'
 import { post, postSchema } from './post.ts'
 
@@ -39,8 +39,6 @@ app
   .get('/:username', async (c) => {
     const username = c.req.param('username')
     const minimal = c.req.query('minimal') === 'true'
-    const publicOnly = c.req.query('publicOnly') === 'true'
-    const isFeatured = c.req.query('featured') === 'true'
 
     const page = c.req.query('page')
     const rows = c.req.query('rows')
@@ -48,63 +46,44 @@ app
     const supabase = getSupabaseClient(c)
 
     try {
-      if (isFeatured) {
-        const data = await getFeaturedArkives({
-          supabase,
-          params: {
-            isMinimal: minimal,
-            username
-          }
-        })
-
-        return c.json(data)
-      } else {
-        const data = await get(supabase, {
+      const data = await getArkivesByUser({
+        supabase,
+        params: {
           username,
-          minimal,
-          publicOnly,
+          isMinimal: minimal,
+          isPublic: c.req.query('public'),
+          isFeatured: c.req.query('featured'),
           page,
           rows
-        })
+        }
+      })
 
-        return c.json(data)
-      }
-
+      return c.json(data)
     } catch (error) {
       return c.json({ error: error.message }, error.status)
     }
   })
   .get('/', async (c) => {
     const minimal = c.req.query('minimal') === 'true'
-    const publicOnly = c.req.query('publicOnly') === 'true'
-    const isFeatured = c.req.query('featured') === 'true'
-
     const page = c.req.query('page')
     const rows = c.req.query('rows')
 
     const supabase = getSupabaseClient(c)
 
     try {
-      if (isFeatured) {
-        const data = await getFeaturedArkives({
-          supabase,
-          params: {
-            isMinimal: minimal
-          }
-        })
-
-        return c.json(data)
-      } else {
-        const data = await get(supabase, {
-          minimal,
-          publicOnly,
+      const data = await getArkives({
+        supabase,
+        params: {
+          isPublic: c.req.query('public'),
+          isFeatured: c.req.query('featured'),
+          excludeduser: c.req.query('excludeduser'),
+          isMinimal: minimal,
           page,
           rows
-        })
+        }
+      })
 
-        return c.json(data)
-      }
-
+      return c.json(data)
     } catch (error) {
       return c.json({ error: error.message }, error.status)
     }

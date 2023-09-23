@@ -1,3 +1,4 @@
+import { StorageClient } from 'https://esm.sh/v131/@supabase/storage-js@2.5.1/denonext/storage-js.mjs';
 import { Context, SupabaseClient, createClient } from './deps.ts'
 import { getUsernameFromUserId } from "./username.ts";
 
@@ -26,8 +27,8 @@ export const getSupabaseClient = (c: Context) => {
  * @param client 
  * @param username 
  */
-export const hasActiveUser = async (client: SupabaseClient, username: string) => {
-  if (username) {
+export const hasActiveUser = async (username: string, client?: SupabaseClient) => {
+  if (username && client) {
     const { data: { user } } = await client.auth.getUser()
 
     if (user) {

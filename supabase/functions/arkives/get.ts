@@ -84,8 +84,6 @@ export async function get(
       AND d.created_at = ld.created_at
   `
 
-  // TODO: Fix total count
-  // Why does it return more count when !minimal?
   const arkivesRaw = await sql`
 		SELECT
 			${sql(columns)},
