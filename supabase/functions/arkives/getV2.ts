@@ -310,7 +310,9 @@ export const getArkivesByUser = async (props: ArkivesProps) => {
 
         WHERE up.username = ${username}
         ${hasUser
-            ? sql`AND a.public = ${isPublic === 'true'}`
+            ? typeof isPublic === 'undefined'
+                ? sql``
+                : sql`AND a.public = ${isPublic === 'true'}`
             : sql`AND a.public = true`
         }
         ${typeof isFeatured !== 'undefined'
