@@ -197,8 +197,11 @@ const mapToArkivesSchema = (response: any[], isMinimal = false) => {
  *   - use this to get only the public arkives of other users aka "Community Arkives"
  *   - if this is not provided, all public arkives will be returned
  * 
- * 3. page: /arkives?page=0
- * 4. page: /arkives?rows=0
+ * 4. arkivename: /arkives?arkivename=aave
+ *   - this allows searching of arkive even when there is no active user
+ * 
+ * 5. page: /arkives?page=0
+ * 6. page: /arkives?rows=0
  *   - this will serve as the offset or skip
  * 
  * @param props
@@ -213,7 +216,8 @@ export const getArkives = async (props: ArkivesProps) => {
             page,
             rows,
             isMinimal,
-            excludeduser
+            excludeduser,
+            arkivename
         }
     } = props
 
@@ -244,6 +248,10 @@ export const getArkives = async (props: ArkivesProps) => {
         }
         ${typeof isFeatured !== 'undefined'
             ? sql`AND a.featured = ${isFeatured === 'true'}`
+            : sql``
+        }
+        ${typeof arkivename !== 'undefined'
+            ? sql`AND a.name ~ ${arkivename}`
             : sql``
         }
         ${typeof excludeduser !== 'undefined'

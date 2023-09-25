@@ -78,6 +78,7 @@ app
           isPublic: c.req.query('public'),
           isFeatured: c.req.query('featured'),
           excludeduser: c.req.query('excludeduser'),
+          arkivename: c.req.query('arkivename'), // allow filtering by arkivename
           isMinimal: minimal,
           page,
           rows
