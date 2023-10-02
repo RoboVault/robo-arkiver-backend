@@ -1,7 +1,7 @@
 import { Hono, validator } from '../_shared/deps.ts'
 import { getSupabaseClient } from '../_shared/utils.ts'
+import { getArkiveByName, getArkives, getArkivesByUser } from "./getV2.ts";
 import { del } from './delete.ts'
-import { get } from './get.ts'
 import { patch } from './patch.ts'
 import { post, postSchema } from './post.ts'
 
@@ -22,11 +22,13 @@ app
      * see: get.ts
      */
     try {
-      const data = await get(supabase, {
-        username,
-        arkivename,
-        minimal,
-        publicOnly: false,
+      const data = await getArkiveByName({
+        supabase,
+        params: {
+          username,
+          arkivename,
+          isMinimal: minimal
+        }
       })
 
       return c.json(data)
@@ -38,35 +40,52 @@ app
   .get('/:username', async (c) => {
     const username = c.req.param('username')
     const minimal = c.req.query('minimal') === 'true'
-    const publicOnly = c.req.query('publicOnly') === 'true'
+
+    const page = c.req.query('page')
+    const rows = c.req.query('rows')
+
     const supabase = getSupabaseClient(c)
 
     try {
-      const data = await get(supabase, {
-        username,
-        minimal,
-        publicOnly,
+      const data = await getArkivesByUser({
+        supabase,
+        params: {
+          username,
+          isMinimal: minimal,
+          isPublic: c.req.query('public'),
+          isFeatured: c.req.query('featured'),
+          page,
+          rows
+        }
       })
 
       return c.json(data)
-
     } catch (error) {
       return c.json({ error: error.message }, error.status)
     }
   })
   .get('/', async (c) => {
     const minimal = c.req.query('minimal') === 'true'
-    const publicOnly = c.req.query('publicOnly') === 'true'
+    const page = c.req.query('page')
+    const rows = c.req.query('rows')
+
     const supabase = getSupabaseClient(c)
 
     try {
-      const data = await get(supabase, {
-        minimal,
-        publicOnly,
+      const data = await getArkives({
+        supabase,
+        params: {
+          isPublic: c.req.query('public'),
+          isFeatured: c.req.query('featured'),
+          excludeduser: c.req.query('excludeduser'),
+          arkivename: c.req.query('arkivename'), // allow filtering by arkivename
+          isMinimal: minimal,
+          page,
+          rows
+        }
       })
 
       return c.json(data)
-
     } catch (error) {
       return c.json({ error: error.message }, error.status)
     }

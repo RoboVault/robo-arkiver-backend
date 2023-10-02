@@ -18,3 +18,8 @@ export type Arkive = {
         manifest: string
     }[]
 }
+
+export type Arkives = {
+    total_arkives: number,
+    arkives: Arkive[]
+}

@@ -1,8 +1,10 @@
 import { postgres, SupabaseClient } from '../_shared/deps.ts'
 import { HttpError } from '../_shared/http_error.ts'
+import { arkiveMapper } from "../_shared/mappers.ts";
+import { deploymentMapper } from "../_shared/mappers.ts";
 import { Arkive } from "../_shared/models/arkive.ts";
 import { getUsernameFromUserId } from '../_shared/username.ts'
-import { getEnv } from '../_shared/utils.ts'
+import { getEnv, getLimitOffset } from '../_shared/utils.ts'
 
 export async function get(
   supabase: SupabaseClient,
@@ -11,9 +13,20 @@ export async function get(
     arkivename?: string
     minimal: boolean
     publicOnly: boolean
+    page?: string,
+    rows?: string
   },
 ) {
-  const { username, arkivename, minimal, publicOnly } = params
+  const {
+    username,
+    arkivename,
+    minimal,
+    publicOnly,
+    page,
+    rows
+  } = params
+
+  const { limit, offset } = getLimitOffset(page, rows)
 
   const _publicOnly = !publicOnly
     ? await shouldReturnOnlyPublic(supabase, params)
@@ -38,28 +51,53 @@ export async function get(
     'up.username',
   ]
 
-  const extraColumns = [
-    'd.id',
+  const deploymentColumns = [
     'd.created_at',
     'd.major_version',
     'd.minor_version',
     'd.status',
     'd.arkive_id',
+  ]
+
+  const extraColumns = [
     'd.manifest',
   ]
 
-  const columns = minimal ? minimalColumns : minimalColumns.concat(extraColumns)
+  const columns = minimal
+    ? minimalColumns.concat(deploymentColumns)
+    : minimalColumns
+      .concat(deploymentColumns)
+      .concat(extraColumns)
+
+  const latestDeployment = sql`
+    SELECT
+    ${sql(deploymentColumns)}
+    FROM public.deployments d
+    INNER JOIN (
+        SELECT
+          arkive_id,
+          MAX(created_at) as created_at
+          FROM public.deployments
+          GROUP BY arkive_id
+    ) ld 
+      ON d.arkive_id = ld.arkive_id 
+      AND d.created_at = ld.created_at
+  `
 
   const arkivesRaw = await sql`
 		SELECT
-			${sql(columns)}
+			${sql(columns)},
+      ${(!arkivename) && sql`COUNT(*) OVER() AS total_arkives`}
 		FROM
 			public.arkive a
 		JOIN
 			public.user_profile up ON a.user_id = up.id
-		${minimal ? sql`` : sql`LEFT JOIN
-			public.deployments d ON a.id = d.arkive_id`
+
+		${minimal
+      ? sql`LEFT JOIN (${latestDeployment}) d ON a.id = d.arkive_id`
+      : sql`LEFT JOIN public.deployments d ON a.id = d.arkive_id`
     }
+
 		${_publicOnly
       ? username
         ? arkivename
@@ -72,6 +110,9 @@ export async function get(
           : sql`WHERE up.username = ${username}`
         : sql`WHERE a.public = true` // return empty array
     }
+
+    LIMIT ${limit}
+    OFFSET ${offset}
 	`
 
   let arkives
@@ -81,27 +122,14 @@ export async function get(
 
     arkivesRaw.forEach((arkive) => {
       const deployment = {
-        'id': arkive.id,
-        'created_at': arkive.created_at,
-        'major_version': arkive.major_version,
-        'minor_version': arkive.minor_version,
-        'status': arkive.status,
+        ...deploymentMapper(arkive),
         'file_path': arkive.file_path,
         'manifest': arkive.manifest,
       }
 
       if (!grouped[arkive.arkive_id]) {
         grouped[arkive.arkive_id] = {
-          'id': arkive.arkive_id,
-          'name': arkive.name,
-          'user_id': arkive.user_id,
-          'public': arkive.public,
-          'thumbnail_url': arkive.thumbnail_url,
-          'code_repo_url': arkive.code_repo_url,
-          'project_url': arkive.project_url,
-          'environment': arkive.environment,
-          'username': arkive.username,
-          'featured': arkive.featured,
+          ...arkiveMapper(arkive),
           'deployments': [deployment],
         }
       } else {
@@ -109,9 +137,19 @@ export async function get(
       }
     })
 
+
     arkives = Object.values(grouped)
   } else {
-    arkives = arkivesRaw
+    const mappedArkives = arkivesRaw.map((arkive) => {
+      return {
+        ...arkiveMapper(arkive),
+        latest_deployment: {
+          ...deploymentMapper(arkive)
+        }
+      }
+    })
+
+    arkives = mappedArkives
   }
 
   if (username && arkivename && arkives.length === 0) {
@@ -122,7 +160,14 @@ export async function get(
     return arkives[0]
   }
 
-  return arkives
+  const totalArkives = minimal
+    ? arkives.length ? arkivesRaw[0].total_arkives : 0
+    : arkives.length
+
+  return {
+    total_arkives: totalArkives,
+    arkives
+  }
 }
 
 const shouldReturnOnlyPublic = async (client: SupabaseClient, params: {

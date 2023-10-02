@@ -1,4 +1,6 @@
-import { Context, createClient } from './deps.ts'
+import { StorageClient } from 'https://esm.sh/v131/@supabase/storage-js@2.5.1/denonext/storage-js.mjs';
+import { Context, SupabaseClient, createClient } from './deps.ts'
+import { getUsernameFromUserId } from "./username.ts";
 
 export const getEnv = (key: string, defaultValue?: string): string => {
   const value = Deno.env.get(key)
@@ -20,6 +22,25 @@ export const getSupabaseClient = (c: Context) => {
   return supabase
 }
 
+/**
+ * Use this to check wether to get Public or User's Arkives
+ * @param client 
+ * @param username 
+ */
+export const hasActiveUser = async (username: string, client?: SupabaseClient) => {
+  if (username && client) {
+    const { data: { user } } = await client.auth.getUser()
+
+    if (user) {
+      const activeUser = await getUsernameFromUserId(client, user.id)
+      return activeUser === username
+    }
+
+    return false
+  } else {
+    return false
+  }
+}
 
 /**
  * Add check if value is not a valid JSON format
@@ -54,4 +75,15 @@ export const parseJSON = (value: any) => {
       return [value]
     }
   }
+}
+
+export const getLimitOffset = (pageCount = '0', limit = '50') => {
+  const page = parseInt(pageCount)
+  const rows = parseInt(limit)
+
+  if (page === 0) {
+    return { limit, offset: 0 }
+  }
+
+  return { limit, offset: page * rows }
 }

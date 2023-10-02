@@ -15,6 +15,26 @@ const getHeaders = (token: string = ANON_KEY) => {
   }
 }
 
+const MINIMAL_SCHEMA = z.object({
+  id: z.string(),
+  name: z.string(),
+  user_id: z.string(),
+  public: z.boolean(),
+  thumbnail_url: z.string().nullable(),
+  code_repo_url: z.string().nullable(),
+  project_url: z.string().nullable(),
+  environment: z.string(),
+  username: z.string(),
+  featured: z.boolean(),
+  latest_deployment: z.object({
+    id: z.string(),
+    created_at: z.string(),
+    major_version: z.string(),
+    minor_version: z.string(),
+    status: z.string(),
+  }),
+})
+
 const ARKIVE_SCHEMA = z.object({
   id: z.string(),
   name: z.string(),
@@ -57,6 +77,7 @@ const ARKIVE_SCHEMA = z.object({
 /**
  * Happy Path Tests:
  * - GET Arkives with no path parameters
+ * - GET all Arkives with no path parameters and ?minimal=true
  * - GET all Arkives of a user
  * - GET arkive using arkiveName
  */
@@ -73,10 +94,33 @@ Deno.test({
 
     assertEquals(response.status, 200)
 
-    const arkives = await response.json()
-    assertNotEquals(arkives.length, 0)
+    const data = await response.json()
+    assertNotEquals(data.arkives.length, 0)
 
-    const { success } = z.array(ARKIVE_SCHEMA).safeParse(arkives)
+    const { success } = z.array(ARKIVE_SCHEMA).safeParse(data.arkives)
+    assertEquals(success, true)
+  },
+
+  sanitizeResources: false,
+  sanitizeOps: false,
+})
+
+Deno.test({
+  name: 'GET all Arkives with no path parameters and ?minimal=true',
+  fn: async () => {
+    const url = `${ARKIVES_URL}?minimal=true`
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: getHeaders()
+    })
+
+    assertEquals(response.status, 200)
+
+    const data = await response.json()
+    assertNotEquals(data.arkives.length, 0)
+
+    const { success } = z.array(MINIMAL_SCHEMA).safeParse(data.arkives)
     assertEquals(success, true)
   },
 
@@ -96,10 +140,10 @@ Deno.test({
 
     assertEquals(response.status, 200)
 
-    const arkives = await response.json()
+    const data = await response.json()
 
     // check if arkives has other user
-    const otherUserArkives = arkives.find((arkive: Arkive) => {
+    const otherUserArkives = data.arkives.find((arkive: Arkive) => {
       return arkive.username === 's_battenally'
     })
 
@@ -107,7 +151,7 @@ Deno.test({
     assertEquals(otherUserArkives, undefined)
 
     // check if arkives owned by the user
-    const userArkives = arkives.find((arkive: Arkive) => {
+    const userArkives = data.arkives.find((arkive: Arkive) => {
       return arkive.username === 'robolabs'
     })
 
@@ -146,7 +190,7 @@ Deno.test({
  * Negative Tests:
  * 
  * - GET Arkive using invalid username
- * - GET Arkive using invalid arkiveName 
+ * - GET Arkive using invalid arkiveName
  */
 
 Deno.test({
@@ -162,10 +206,10 @@ Deno.test({
     // It should still throw 200 since this is not specific search
     assertEquals(response.status, 200)
 
-    const arkives = await response.json()
+    const data = await response.json()
 
     // It should NOT return arkives
-    assertEquals(arkives.length, 0)
+    assertEquals(data.arkives.length, 0)
   },
 
   sanitizeResources: false,

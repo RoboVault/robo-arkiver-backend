@@ -1,1 +1,4 @@
 .env
+
+# ignore folders for local testing
+supabase/functions/*test*/

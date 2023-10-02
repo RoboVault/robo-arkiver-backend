@@ -47,3 +47,14 @@ export const getUsernameFromUserId = async (
 
   return profileRes.data.username
 }
+
+export const getCachedUser = async (supabase: SupabaseClient) => {
+  const user = await cachified({
+    key: `authenticated-user`,
+    cache: new RedisCache(),
+    getFreshValue: () =>
+      supabase.auth.getUser()
+  })
+
+  return user.data.user
+}
