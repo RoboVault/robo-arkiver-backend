@@ -38,6 +38,13 @@ export const createIpLimiter = (
       return undefined
     }
 
+    // there is a bug where the expiry is -1
+    const expiry = await redis.ttl(key)
+    if (expiry === -1) {
+      await redis.set(key, 1, { ex: window })
+      return undefined
+    }
+
     const currentInt = parseInt(current)
 
     if (currentInt >= max) {
